@@ -275,7 +275,7 @@ function diskformat() {
 }
 function baseinstall {
 
-	echo -e "=============== NEW PARTITION TABLE TO SD CARD =============== \n" 
+	echo -e "=============== INSTALL ROOT AND BOOT FILESYSTEM, PLEASE WAIT  =============== \n" 
 
 	wget http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz -P /mnt/root/
 	bsdtar -xpf /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz -C /mnt/root/
@@ -302,9 +302,8 @@ function baseinstall {
 
 function finisher {
 	clear
-	dialog --msgbox 'READY!!!, Your SD was installed with Arch Linux ARM for Raspberry PI 4, if you have errors, please report at 036raspberry in GitHub' 7 50
+	dialog --msgbox 'READY!!!, Your SD was installed with Arch Linux ARM for Raspberry PI 4, login as alarm/alarm, if you have errors, please report at 036raspberry in GitHub' 10 60
 	clear
-	echo "Please reboot yout server to make changes"
 	exit 0
 }
 

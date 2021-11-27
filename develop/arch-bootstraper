@@ -1118,12 +1118,10 @@ function software {
 function finisher {
 
 	clear
-	dialog --msgbox 'READY!!!, Your PC is succesfully installed with Arch Linux, if you have errors, please report at 036bootstrap in GitHub' 7 50
-	rm -f /arch-setupper.sh &> /dev/null
-	exit
+	dialog --msgbox 'READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub' 7 50
 	clear
-	echo "Please reboot and remove your live media"
-
+	echo "Please reboot your rpi4 to make changes"
+	exit 0
 }
 
 if [ "$1" == "chroot" ]; then
