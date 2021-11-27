@@ -7,13 +7,15 @@ fi
 
 rm /tmp/localestemp.sh* 2> /dev/null
 rm /tmp/hosttemp.sh* 2> /dev/null
+rm /tmp/graphicaltemp.sh* 2> /dev/null
 	
 LOCALESTEMP=/tmp/localestemp.sh.$$
 HOSTTEMP=/tmp/hosttemp.sh.$$
+GRAPHICALTEMP=/tmp/graphicaltemp.sh.$$
 
 SUDOUSER=""
 
-function cleanup { rm $LOCALESTEMP; $HOSTTEMP; exit; }
+function cleanup { rm $LOCALESTEMP; $HOSTTEMP; $GRAPHICALTEMP exit; }
 
 trap cleanup; SIGHUP SIGINT SIGTERM
 
@@ -190,7 +192,9 @@ function packages {
 	echo -e "=============== OK =============== \n" 
 	read -r -p "Press Enter to continue..."
 
-	echo -e "=============== ROOT PASSWORD FOR YOUR SYSTEM =============== \n" 
+	clear
+
+	echo -e "=============== ROOT PASSWORD FOR YOUR SYSTEM (REMEMBER: THE DEFAULT PASSWORD IS root) =============== \n" 
 
 	passwd
 
@@ -526,3 +530,4 @@ core
 
 [ -f $LOCALESTEMP ] && rm $LOCALESTEMP
 [ -f $HOSTTEMP ] && rm $HOSTTEMP
+[ -f $GRAPHICALTEMP ] && rm $GRAPHICALTEMP
