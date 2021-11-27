@@ -235,7 +235,7 @@ function diskformat() {
 	clear
 	response=$?
 
-	if [ $response = 0 ]; then
+	if [ $response -eq 0 ]; then
 	
 		echo -e "=============== NEW PARTITION TABLE TO SD CARD =============== \n" 
 
@@ -253,7 +253,7 @@ function diskformat() {
 
 		echo -e "=============== FORMAT/MOUNT ROOT AND BOOT FILESYSTEM =============== \n" 
 
-		mkfs.f2fs "$1"2
+		mkfs.f2fs -f "$1"2
 		mkfs.fat -F32 "$1"1
 		mkdir /mnt/boot 
 		mkdir /mnt/root
@@ -267,10 +267,6 @@ function diskformat() {
 
 		baseinstall
 
-
-	elif [ $response -eq 1 ] || [ $response -eq 255 ]; then
-		clear
-		exit 1
 	else
 		clear
 		exit 1
