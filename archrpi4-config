@@ -185,7 +185,7 @@ function packages {
 		systemctl start sshd &> /dev/null
 
 		pacman -Syyu --noconfirm 
-		pacman -S sudo git wget rsync networkmanager f2fs-tools neofetch \
+		pacman -S sudo git wget rsync networkmanager neofetch \
 		screen unrar p7zip vim zsh --noconfirm 
 		
 
@@ -194,7 +194,7 @@ function packages {
 
 	clear
 
-	echo -e "=============== ROOT PASSWORD FOR YOUR SYSTEM (REMEMBER: THE DEFAULT PASSWORD IS root) =============== \n" 
+	echo -e "=============== ROOT PASSWORD FOR YOUR SYSTEM =============== \n" 
 
 	passwd
 
