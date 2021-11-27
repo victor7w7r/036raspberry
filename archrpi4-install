@@ -99,15 +99,6 @@ function verify {
 		exit 1
 	fi
 
-	SELECTOR="fsck.f2fs"
-	whichverify "$SELECTOR"
-	local res=$?
-	if [ $res -eq 1 ]; then
-        clear
-		echo "f2fs-tools is not available in this system, please install it"
-		exit 1
-	fi
-
     PING=$(ping -c 1 8.8.8.8 2>&1) 
 
     if [[ "$PING" =~ unreachable* ]]; then
@@ -243,7 +234,7 @@ function diskformat() {
 			mklabel msdos \
 			mkpart primary fat32 1MiB 200MiB \
 			set 1 boot on \
-			mkpart primary f2fs 200MiB 100% \
+			mkpart primary ext4 200MiB 100% \
 			print
 
 		echo " "
@@ -251,10 +242,11 @@ function diskformat() {
 		read -r -p "Press Enter to continue..."
 		clear
 
-		echo -e "=============== FORMAT/MOUNT ROOT AND BOOT FILESYSTEM =============== \n" 
+		echo -e "=============== FORMAT/MOUNT ROOT AND BOOT FILESYSTEMS =============== \n" 
 
-		mkfs.f2fs -f "$1"2
+		mkfs.ext4 "$1"2
 		mkfs.fat -F32 "$1"1
+
 		mkdir /mnt/boot 
 		mkdir /mnt/root
 		mount "$1"2 /mnt/root
@@ -275,7 +267,7 @@ function diskformat() {
 }
 function baseinstall {
 
-	echo -e "=============== INSTALL ROOT AND BOOT FILESYSTEM, PLEASE WAIT  =============== \n" 
+	echo -e "=============== INSTALL ROOT AND BOOT FILESYSTEMS, PLEASE WAIT  =============== \n" 
 
 	wget http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz -P /mnt/root/
 	bsdtar -xpf /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz -C /mnt/root/
@@ -285,6 +277,9 @@ function baseinstall {
 	sed -i 's/mmcblk0/mmcblk1/g' /mnt/root/etc/fstab
 	sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin Yes/' \
 		/mnt/root/etc/ssh/sshd_config &> /dev/null
+
+	wget https://raw.githubusercontent.com/victor7w7r/036raspberry/master/archrpi4-config -P /mnt/root/root/
+	chmod +x /mnt/root/root/archrpi4-config
 
 	umount /mnt/boot 
 	umount /mnt/root 
@@ -302,7 +297,8 @@ function baseinstall {
 
 function finisher {
 	clear
-	dialog --msgbox 'READY!!!, Your SD was installed with Arch Linux ARM for Raspberry PI 4, login as alarm/alarm, if you have errors, please report at 036raspberry in GitHub' 10 60
+	dialog --msgbox "At the superuser home directory, we put a configurer script if you want" 8 60
+	dialog --msgbox 'READY!!!, Your SD was installed with Arch Linux ARM for Raspberry PI 4, login as root/root, if you have errors, please report at 036raspberry in GitHub' 10 60
 	clear
 	exit 0
 }

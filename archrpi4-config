@@ -85,7 +85,7 @@ function verify {
     ARCH=$(uname -m)
     OPERATING=$(uname -o)
 	SELECTOR=""
-	PI="$(cat /sys/firmware/devicetree/base)"
+	PI="$(cat /sys/firmware/devicetree/base/model)"
 
 	if [ "$OPERATING" != "GNU/Linux" ]; then
 		clear
@@ -125,8 +125,8 @@ function verify {
 
 	echo "Populating Arch ARM Keys.."
 
-	pacman-key --init
-	pacman-key --populate archlinuxarm
+	pacman-key --init &> /dev/null
+	pacman-key --populate archlinuxarm  &> /dev/null
 
     echo "Updating Arch ARM Repositories..."
 
@@ -189,6 +189,15 @@ function packages {
 
 	echo -e "=============== OK =============== \n" 
 	read -r -p "Press Enter to continue..."
+
+	echo -e "=============== ROOT PASSWORD FOR YOUR SYSTEM =============== \n" 
+
+	passwd
+
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "Press Enter to continue..."
+
 
 }
 
@@ -378,6 +387,16 @@ function graphical {
 			sudo systemctl enable bluetooth
 			sudo systemctl start ModemManager
 			sudo systemctl start bluetooth
+
+			echo "enable_uart=1" > /boot/config.txt
+			echo "dtparam=audio=on" >> /boot/config.txt
+			echo "hdmi_drive=2" >> /boot/config.txt
+			echo "audio_pwm_mode=2" >> /boot/config.txt
+			echo "disable_overscan=1" >> /boot/config.txt
+			echo "gpu_mem=64" >> /boot/config.txt
+			echo "cma=512" >> /boot/config.txt
+			echo "dtoverlay=vc4-fkms-v3d" >> /boot/config.txt
+			echo "max_framebuffers=2" >> /boot/config.txt
 
 			echo " "
 			echo -e "=============== OK =============== \n" 
