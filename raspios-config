@@ -230,6 +230,8 @@ function packages {
 	echo -e "=============== OK =============== \n" 
 	read -r -p "Press Enter to continue..."
 
+	clear
+
 	echo -e "=============== INSTALL CORE PACKAGES =============== \n" 
 
 	apt install -y cockpit git net-tools wget vim rsync neofetch \
@@ -268,7 +270,7 @@ function graphical {
 	clear
 	echo -e "=============== XFCE =============== \n" 
 	
-	apt install xserver-xorg xfce4 xfce4-goodies xfce4-indicator-plugin \
+	apt install -y xserver-xorg xfce4 xfce4-goodies xfce4-indicator-plugin \
 		blueman ttf-ubuntu-font-family firefox nemo cinnamon-l10n gdm3
 
 	touch /root/.xinitrc
