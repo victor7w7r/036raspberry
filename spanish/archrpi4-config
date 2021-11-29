@@ -91,19 +91,19 @@ function verify {
 
 	if [ "$OPERATING" != "GNU/Linux" ]; then
 		clear
-		echo 'ERROR: Your Operating System is not GNU/Linux, exiting'
+		echo 'ERROR: Este sistema no es GNU/Linux, saliendo'
 		exit 1
 	fi
 
     if [ "$ARCH" != "aarch64" ]; then
-        echo "ERROR: This script is only intended to run on aarch64 Devices."
+    echo "ERROR: Este script sólo se ejecuta en procesadores de aarch64"
         exit 1
     fi
 
     if [[ "$PI" =~ ^Raspberry[[:space:]]Pi[[:space:]]4.* ]]; then
         echo "ready" &> /dev/null
 	else
-		echo "ERROR: This script is only intended to run on Raspberry Pi 4 Devices."
+		echo "ERROR: Este script sólo se ejecuta en Raspberry Pi 4"
         exit 1
     fi
 
@@ -113,7 +113,7 @@ function verify {
 
 	if [ $res -eq 1 ]; then
 		clear
-		echo "ERROR: Arch Linux pacman is not available in this system, this system isn't Arch Linux?"
+		echo "ERROR: Arch Linux pacman no está disponible, ¿Acaso esto no es Arch Linux?"
 		exit 1
 	fi
 
@@ -121,16 +121,16 @@ function verify {
 
     if [[ "$PING" =~ unreachable* ]]; then
 		clear
-		echo "ERROR: This PC doesn't have internet connection, please check"
+		echo "ERROR: No tienes conexión a internet, por favor revisa e inténtalo de nuevo"
 		exit 1
 	fi
 
-	echo "Populating Arch ARM Keys.."
+	echo "Llenando llaves de Arch ARM..."
 
 	pacman-key --init &> /dev/null
 	pacman-key --populate archlinuxarm  &> /dev/null
 
-    echo "Updating Arch ARM Repositories..."
+    echo "Actualizando repositorios de Arch..."
 
     pacman -Sy &> /dev/null
 
@@ -139,7 +139,7 @@ function verify {
 	local res=$?
 
 	if [ $res -eq 1 ]; then
-		echo "lsb_release is not available in this system, installing"
+		echo "lsb_release no está disponible, instalando"
 		pacman -S lsb-release --noconfirm &> /dev/null
 	fi
 
@@ -147,7 +147,7 @@ function verify {
 
 	if [ "$IS_ARCH" != "Arch" ]; then
 		clear
-		echo "ERROR: Your Operating System is not Arch Linux, exiting"
+		echo "ERROR: Tu sistema operativo no es Arch Linux, saliendo"
 		exit 1
 	fi
 
@@ -156,13 +156,13 @@ function verify {
 	local res=$?
 
 	if [ $res -eq 1 ]; then
-		echo "dialog is not available in this system, installing"
+		echo "dialog is no está disponible, instalando"
 		pacman -S dialog --noconfirm &> /dev/null
 	fi
 
 	pacman -S ncurses --noconfirm &> /dev/null
 
-	echo "All dependencies is ok!"
+	echo "Todo ok!"
 
 	START=$(date +%s)
 	CHARS="/-\|"
@@ -179,7 +179,7 @@ function verify {
 function packages {
 	clear
 
-	echo -e "=============== SYSTEM UPDATE AND INSTALL CORE PACKAGES =============== \n" 
+	echo -e "=============== ACTUALIZACIÓN DEL SISTEMA E INSTALAR PAQUETES BASE =============== \n" 
 
 		systemctl enable sshd &> /dev/null
 		systemctl start sshd &> /dev/null
@@ -188,20 +188,19 @@ function packages {
 		pacman -S sudo git wget rsync networkmanager neofetch \
 		screen unrar p7zip vim zsh --noconfirm 
 		
-
+	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "Presione Enter para continuar..."
 
 	clear
 
-	echo -e "=============== ROOT PASSWORD FOR YOUR SYSTEM =============== \n" 
+	echo -e "=============== CONTRASEÑA DE ROOT PARA EL SISTEMA =============== \n" 
 
 	passwd
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
-
+	read -r -p "Presione Enter para continuar..."
 
 }
 
@@ -211,7 +210,7 @@ function hostnamer {
 	clear
 	dialog --title "Hostname" \
     --backtitle "036 Creative Studios" \
-    --inputbox "Please write your hostname (ex: A036-rpi4)" 8 80 2>"$HOSTTEMP"
+    --inputbox "Por favor escriba su hostname (ej: A036-rpi4)" 8 80 2>"$HOSTTEMP"
 
     RESPONSE=$?
     DATA=$(<$HOSTTEMP)
@@ -233,7 +232,7 @@ function hostnamer {
 function localer {
 
 	clear
-	dialog --msgbox "America/Guayaquil is the timezone by default, if you want to change, here is the command\n\n \
+	dialog --msgbox "America/Guayaquil es el timezone por defecto, si quieres cambiarlo por algún otro, aquí está la orden\n\n \
 		ln -sf /usr/share/zoneinfo/REGION/CITY /etc/localtime" 9 50
 
 	ln -sf /usr/share/zoneinfo/America/Guayaquil /etc/localtime
@@ -241,7 +240,7 @@ function localer {
 
 	dialog --clear --backtitle "036 Creative Studios" \
 		--title "Locale" \
-		--menu "Choose your locale, if you want to change to other locales, check the README of the Github of this project" 12 50 4 \
+		--menu "Elige tu Locale, si quieres cambiar a otros, revisa el README dentro del GitHub de este proyecto" 12 50 4 \
 		Spanish "es_ES" \
 		English "en_US" 2>"${LOCALESTEMP}"
 
@@ -271,9 +270,9 @@ function localer {
 function newuser {
 
 	clear
-	echo -e "=============== ADD A USER TO A SUDO GROUP =============== \n" 
-	
-	read -r -p "Write your new user: " SUDOUSER
+	echo -e "=============== AGREGAR UN USUARIO DE SUDO =============== \n" 
+
+	read -r -p "Escribe tu nuevo usuasrio: " SUDOUSER
 	useradd --create-home "$SUDOUSER"
 	passwd "$SUDOUSER"
 	usermod -aG wheel "$SUDOUSER"
@@ -282,7 +281,7 @@ function newuser {
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "Presione Enter para continuar..."
 }
 
 function swapper {
@@ -300,7 +299,7 @@ function swapper {
 	
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "Presione Enter para continuar..."
 }
 
 function graphical {
@@ -308,7 +307,7 @@ function graphical {
 	clear
 	dialog --clear --title "Graphical Environment" \
 	--backtitle "036 Creative Studios" \
-	--menu "Choose a GUI, these are the common used, this script recommends XFCE" 15 50 4 \
+	--menu "Selecciona un GUI, estos son los más usados, Este script recomienda XFCE" 15 50 4 \
 			XFCE "Xfce Desktop Environment" \
 			GNOME "GNOME Desktop Environment" \
 			KDE "KDE Desktop Environment" \
@@ -334,7 +333,7 @@ function graphical {
 
 				echo " "
 				echo -e "=============== OK =============== \n" 
-				read -r -p "Press Enter to continue..."
+				read -r -p "Presione Enter para continuar..."
 				return;;
 
 			GNOME) 
@@ -347,7 +346,7 @@ function graphical {
 
 				echo " "
 				echo -e "=============== OK =============== \n" 
-				read -r -p "Press Enter to continue..."
+				read -r -p "Presione Enter para continuar..."
 				return;;
 
 			KDE) 
@@ -361,7 +360,7 @@ function graphical {
 
 				echo " "
 				echo -e "=============== OK =============== \n" 
-				read -r -p "Press Enter to continue..."
+				read -r -p "Presione Enter para continuar..."
 				return;;
 
 			XORG) 
@@ -372,7 +371,7 @@ function graphical {
 
 				echo " "
 				echo -e "=============== OK =============== \n" 
-				read -r -p "Press Enter to continue..."
+				read -r -p "Presione Enter para continuar..."
 				return;;
 
 			NOGUI) 
@@ -382,7 +381,7 @@ function graphical {
 		esac
 
 			clear
-			echo -e "=============== BLUETOOTH AND SOUND =============== \n" 
+			echo -e "=============== BLUETOOTH Y SONIDO =============== \n" 
 
 			pacman -S alsa-utils alsa-firmware alsa-lib alsa-plugins pulseaudio-alsa \
 				pulseaudio-bluetooth bluez-utils libmm-glib modemmanager blueman --noconfirm
@@ -404,14 +403,14 @@ function graphical {
 
 			echo " "
 			echo -e "=============== OK =============== \n" 
-			read -r -p "Press Enter to continue..."
+			read -r -p "Presione Enter para continuar..."
 
 }
 
 function aur {
 
 	clear
-	echo -e "=============== AUR (YAY ASKS YOU YOUR PASSWORD, PAY ATTENTION) ===============  \n" 
+	echo -e "=============== AUR (YAY PREGUNTA POR TU CONTRASEÑA, ESTATE ATENTO) ===============  \n" 
 
 	pacman -S --needed base-devel fakeroot packer go --noconfirm
 
@@ -421,7 +420,7 @@ function aur {
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "Presione Enter para continuar..."
 
 }
 
@@ -444,11 +443,11 @@ function ohmyzsh {
 
 	chown "$SUDOUSER" /home/"$SUDOUSER"/omz.sh
 
-	echo "We create a script called omz.sh in your home directory, after reboot, use chmod +x at omz.sh"
+	echo "Hemos creado un script llamado omz.sh en tu carpeta de home, después de reiniciar, usa chmod +x omz.sh"
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "Presione Enter para continuar..."
 
 }
 
@@ -456,8 +455,8 @@ function software {
 
 	systemctl mask lvm2-monitor
 
-		dialog --title "More Sofware!!" --backtitle "036 Creative Studios" \
-		--yesno "This script has a little pack of software, Do you like it?\n \
+	dialog --title "Más Sofware!!" --backtitle "036 Creative Studios" \
+		--yesno "Este script tiene un pequeño pack de software, ¿Te gusta?\n \
 			-> baobab \n \
 			-> ntfs-3g \n \
 			-> exfatprogs \n \
@@ -500,12 +499,11 @@ function software {
 		
 	chown "$SUDOUSER" /home/"$SUDOUSER"/software.sh
 
-	echo "We create a script called software.sh in your home directory, after reboot, use chmod +x at software.sh"
+	echo "Hemos creado un script llamado software.sh en tu carpeta de home, después de reiniciar, usa chmod +x software.sh"
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
-
+	read -r -p "Presione Enter para continuar..."
 
 	elif [ $response -eq 1 ]; then
 		clear
@@ -519,9 +517,9 @@ function software {
 function finisher {
 
 	clear
-	dialog --msgbox 'READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub' 7 50
+	dialog --msgbox 'LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, repórtalo a 036raspberry' 7 50
 	clear
-	echo "Please reboot your rpi4 to make changes"
+	echo "Por favor reinicia tu rpi4 para realizar los cambios"
 	exit 0
 }
 

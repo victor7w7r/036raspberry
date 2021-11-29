@@ -19,7 +19,7 @@ function cleanup { rm $LOCALESTEMP; $HOSTTEMP; $GRAPHICALTEMP exit; }
 
 trap cleanup; SIGHUP SIGINT SIGTERM
 
-function core { clear; cover; sleep 1s; verify; packages; hostnamer; localer; newuser; swapper; graphical; aur; ohmyzsh; software; finisher;}
+function core { clear; cover; sleep 1s; verify; packages; newuser; graphical; ohmyzsh; software; finisher;}
 
 function cover {
 	echo '          					    ``...`                                                    '
@@ -76,7 +76,8 @@ function cover {
 
 function whichverify() {
 	stat=$(which "$1" 2>&1)
-	if [[ "$stat" =~ which:* ]]; then 
+
+	if [ "$stat" == "" ]; then
 		return 1
 	else
 		return 0
@@ -91,7 +92,7 @@ function verify {
 
 	if [ "$OPERATING" != "GNU/Linux" ]; then
 		clear
-		echo 'ERROR: Your Operating System is not GNU/Linux, exiting'
+		echo 'ERROR: Este sistema no es GNU/Linux, saliendo'
 		exit 1
 	fi
 
@@ -103,17 +104,38 @@ function verify {
     if [[ "$PI" =~ ^Raspberry[[:space:]]Pi[[:space:]]4.* ]]; then
         echo "ready" &> /dev/null
 	else
-		echo "ERROR: This script is only intended to run on Raspberry Pi 4 Devices."
+		echo "ERROR: Este script sólo se ejecuta en Raspberry Pi 4"
         exit 1
     fi
 
-    SELECTOR="pacman"
+    SELECTOR="apt"
 	whichverify "$SELECTOR"
 	local res=$?
 
 	if [ $res -eq 1 ]; then
 		clear
-		echo "ERROR: Arch Linux pacman is not available in this system, this system isn't Arch Linux?"
+		echo "ERROR: APT no está disponible, ¿Acaso esto no es Debian?"
+		exit 1
+	fi
+
+    SELECTOR="raspi-config"
+	whichverify "$SELECTOR"
+	local res=$?
+
+	if [ $res -eq 1 ]; then
+		clear
+		echo "ERROR: Este distro de Debian no tiene la aplicación raspi-config, por favor use Raspberry Pi OS Lite, saliendo"
+		exit 1
+	fi
+
+	SELECTOR="openbox-lxde-session"
+	whichverify "$SELECTOR"
+	local res=$?
+
+	if [ $res -eq 0 ]; then
+		clear
+		echo "ERROR: Ok, is Raspbery Pi OS, but this is not a Raspberry Pi OS Lite, exiting"
+		echo "ERROR: Bien, este es Raspberry Pi OS, pero no es Raspberry Pi OS Lite, saliendo"
 		exit 1
 	fi
 
@@ -121,33 +143,29 @@ function verify {
 
     if [[ "$PING" =~ unreachable* ]]; then
 		clear
-		echo "ERROR: This PC doesn't have internet connection, please check"
+		echo "ERROR: No tienes conexión a internet, por favor revisa e inténtalo de nuevo"
 		exit 1
 	fi
 
-	echo "Populating Arch ARM Keys.."
+    echo "Updating Debian repositories..."
+    echo "Actualizando repositorios de Debian..."
 
-	pacman-key --init &> /dev/null
-	pacman-key --populate archlinuxarm  &> /dev/null
-
-    echo "Updating Arch ARM Repositories..."
-
-    pacman -Sy &> /dev/null
+    apt update &> /dev/null
 
     SELECTOR="lsb_release"
 	whichverify "$SELECTOR"
 	local res=$?
 
 	if [ $res -eq 1 ]; then
-		echo "lsb_release is not available in this system, installing"
+		echo "lsb_release no está disponible, instalando"
 		pacman -S lsb-release --noconfirm &> /dev/null
 	fi
 
 	IS_ARCH=$(lsb_release -is)
 
-	if [ "$IS_ARCH" != "Arch" ]; then
+	if [ "$IS_ARCH" != "Debian" ]; then
 		clear
-		echo "ERROR: Your Operating System is not Arch Linux, exiting"
+		echo "ERROR: Tu sistema operativo no es Debian, saliendo"
 		exit 1
 	fi
 
@@ -156,13 +174,11 @@ function verify {
 	local res=$?
 
 	if [ $res -eq 1 ]; then
-		echo "dialog is not available in this system, installing"
-		pacman -S dialog --noconfirm &> /dev/null
+		echo "dialog is no está disponible, instalando"
+		apt install -y dialog &> /dev/null
 	fi
 
-	pacman -S ncurses --noconfirm &> /dev/null
-
-	echo "All dependencies is ok!"
+	echo "Todo ok!"
 
 	START=$(date +%s)
 	CHARS="/-\|"
@@ -179,249 +195,99 @@ function verify {
 function packages {
 	clear
 
-	echo -e "=============== SYSTEM UPDATE AND INSTALL CORE PACKAGES =============== \n" 
+	sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin Yes/' \
+	/etc/ssh/sshd_config &> /dev/null
 
-		systemctl enable sshd &> /dev/null
-		systemctl start sshd &> /dev/null
+	echo -e "=============== ACTUALIZACIÓN DEL SISTEMA =============== \n" 
 
-		pacman -Syyu --noconfirm 
-		pacman -S sudo git wget rsync networkmanager neofetch \
-		screen unrar p7zip vim zsh --noconfirm 
+	apt upgrade -y
 		
-
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "Presione Enter para continuar..."
 
 	clear
 
-	echo -e "=============== ROOT PASSWORD FOR YOUR SYSTEM =============== \n" 
+	echo -e "=============== CONTRASEÑA DE ROOT PARA EL SISTEMA =============== \n"  
 
 	passwd
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
-
-
-}
-
-function hostnamer {
+	read -r -p "Presione Enter para continuar..."
 	
+	clear
+
+	echo -e "=============== CAMBIO A LOS REPOSITORIOS DE SID Y ACTUALIZACIÓN DE DIST =============== \n" 
+
+	mv /etc/apt/sources.list /etc/apt/sources.list.old
+	mv /etc/apt/sources.list.d /etc/apt/sources.list.d.old
+
+	echo "deb http://deb.debian.org/debian sid main contrib non-free" > /etc/apt/sources.list
+	echo "deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sources.list
+
+	apt update
+	apt dist-upgrade -y
+
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "Presione Enter para continuar..."
 
 	clear
-	dialog --title "Hostname" \
-    --backtitle "036 Creative Studios" \
-    --inputbox "Please write your hostname (ex: A036-rpi4)" 8 80 2>"$HOSTTEMP"
 
-    RESPONSE=$?
-    DATA=$(<$HOSTTEMP)
+	echo -e "=============== INSTALACIÓN DE PAQUETES BASE =============== \n" 
 
-    case $RESPONSE in
-    0) 
-		echo "${DATA}" > /etc/hostname
-		echo "127.0.1.1        ${DATA}" >> /etc/hosts
-		return;;
-    1) 
-        clear; exit 0  
-        return;;
-    255) 
-        clear; exit 0
-        return;;
-    esac
-}
+	apt install -y cockpit git net-tools wget vim rsync neofetch \
+		screen unrar p7zip vim network-manager-gnome zsh
 
-function localer {
+	systemctl enable NetworkManager.service
+	echo "Set managed=true" >> /etc/NetworkManager/NetworkManager.conf
+	systemctl disable dhcpcd.service
 
-	clear
-	dialog --msgbox "America/Guayaquil is the timezone by default, if you want to change, here is the command\n\n \
-		ln -sf /usr/share/zoneinfo/REGION/CITY /etc/localtime" 9 50
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "Presione Enter para continuar..."
 
-	ln -sf /usr/share/zoneinfo/America/Guayaquil /etc/localtime
-	hwclock --systohc
+	dialog --msgbox 'La aplicación de raspi-config se va a abrir, por favor cambia las configuraciones pertinentes' 7 50
 
-	dialog --clear --backtitle "036 Creative Studios" \
-		--title "Locale" \
-		--menu "Choose your locale, if you want to change to other locales, check the README of the Github of this project" 12 50 4 \
-		Spanish "es_ES" \
-		English "en_US" 2>"${LOCALESTEMP}"
+	raspi-config
 
-		menuitem=$(<"${LOCALESTEMP}")
-
-		case $menuitem in
-			Spanish) 
-				clear
-				sed -i 's/^#es_ES.UTF-8 UTF-8/es_ES.UTF-8 UTF-8/' /etc/locale.gen &> /dev/null
-				locale-gen
-				echo 'LANG="es_ES.UTF-8"' > /etc/locale.conf
-				echo 'LC_TIME="es_ES.UTF-8"' >> /etc/locale.conf
-				echo 'LANGUAGE="es_EC:es_ES:es"' >> /etc/locale.conf
-				return;;
-			English) 
-				clear
-				sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen &> /dev/null
-				locale-gen
-				echo 'LANG="en_US.UTF-8"' > /etc/locale.conf
-				echo 'LC_TIME="en_US.UTF-8"' >> /etc/locale.conf
-				echo 'LANGUAGE="es_US:en"' >> /etc/locale.conf
-				return;;
-			*) clear; exit 0;;
-		esac
 }
 
 function newuser {
 
 	clear
-	echo -e "=============== ADD A USER TO A SUDO GROUP =============== \n" 
+	echo -e "=============== AGREGAR UN USUARIO DE SUDO =============== \n" 
 	
-	read -r -p "Write your new user: " SUDOUSER
-	useradd --create-home "$SUDOUSER"
-	passwd "$SUDOUSER"
-	usermod -aG wheel "$SUDOUSER"
-	userdel alarm
-	sed -i 's/^#.*%wheel ALL=(ALL) ALL$/%wheel ALL=(ALL) ALL/' /etc/sudoers &> /dev/null
+	read -r -p "Escribe tu nuevo usuasrio: " SUDOUSER
+	adduser "$SUDOUSER"
+	usermod -aG sudo victor7w7r
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
-}
-
-function swapper {
-
-	clear
-	echo -e "=============== SWAPPING =============== \n" 
-
-	dd if=/dev/zero of=/swapfile bs=1M count=1024 status=progress
-	chmod 600 /swapfile
-	mkswap /swapfile
-	swapon /swapfile
-	echo "swapfile none swap defaults 0 0" >> /etc/fstab
-	echo "vm.swappiness=1" >> /etc/sysctl.d/99-sysctl.conf
-
-	
-	echo " "
-	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "Presione Enter para continuar..."
 }
 
 function graphical {
 
 	clear
-	dialog --clear --title "Graphical Environment" \
-	--backtitle "036 Creative Studios" \
-	--menu "Choose a GUI, these are the common used, this script recommends XFCE" 15 50 4 \
-			XFCE "Xfce Desktop Environment" \
-			GNOME "GNOME Desktop Environment" \
-			KDE "KDE Desktop Environment" \
-			XORG "Minimal xorg Desktop" \
-			NOGUI "No install GUI" 2>"${GRAPHICALTEMP}"
-
-	menuitem=$(<"${GRAPHICALTEMP}")
-
-		case $menuitem in
-			XFCE) 
-
-				clear
-				echo -e "=============== XFCE =============== \n" 
+	echo -e "=============== XFCE =============== \n" 
 	
-				pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm
-				pacman -S xfce4 gdm xfce4-goodies ttf-ubuntu-font-family gtk-engines gtk-engine-murrine \
-					gnome-themes-standard xdg-user-dirs ttf-dejavu gvfs xfce4-notifyd network-manager-applet volumeicon --noconfirm
-				systemctl enable gdm
+	apt install -y xserver-xorg xfce4 xfce4-goodies xfce4-indicator-plugin \
+		blueman ttf-ubuntu-font-family firefox nemo cinnamon-l10n gdm3
 
-				touch /HOME/"$SUDOUSER"/.xinitrc
-				echo "export XAUTHORITY=${HOME}/.Xauthority" > /HOME/"$SUDOUSER"/.xinitrc
-				echo "exec dbus-run-session -- startxfce4" >> /HOME/"$SUDOUSER"/.xinitrc	
+	touch /root/.xinitrc
+	echo 'export XAUTHORITY=${HOME}/.Xauthority' > /root/.xinitrc
+	echo 'xfce4-session' >> /root/.xinitrc	
 
-				echo " "
-				echo -e "=============== OK =============== \n" 
-				read -r -p "Press Enter to continue..."
-				return;;
+	touch /home/"$SUDOUSER"/.xinitrc
+	echo 'export XAUTHORITY=${HOME}/.Xauthority' > /home/"$SUDOUSER"/.xinitrc
+	echo 'xfce4-session' >>  /home/"$SUDOUSER"/.xinitrc
 
-			GNOME) 
-
-				clear
-				echo -e "=============== GNOME =============== \n" 
-				pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm
-				pacman -S gnome gdm gnome-themes-standard network-manager-applet --noconfirm
-				systemctl enable gdm
-
-				echo " "
-				echo -e "=============== OK =============== \n" 
-				read -r -p "Press Enter to continue..."
-				return;;
-
-			KDE) 
-
-				clear
-				echo -e "=============== KDE =============== \n" 
-				pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm
-				pacman -S plasma plasma-wayland-session kde-applications network-manager-applet \
-					network-manager-applet volumeicon --noconfirm
-				systemctl enable sddm.service
-
-				echo " "
-				echo -e "=============== OK =============== \n" 
-				read -r -p "Press Enter to continue..."
-				return;;
-
-			XORG) 
-
-				clear
-				echo -e "=============== XORG ONLY =============== \n" 
-				pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm
-
-				echo " "
-				echo -e "=============== OK =============== \n" 
-				read -r -p "Press Enter to continue..."
-				return;;
-
-			NOGUI) 
-				return;;
-
-			*) clear; exit 0;;
-		esac
-
-			clear
-			echo -e "=============== BLUETOOTH AND SOUND =============== \n" 
-
-			pacman -S alsa-utils alsa-firmware alsa-lib alsa-plugins pulseaudio-alsa \
-				pulseaudio-bluetooth bluez-utils libmm-glib modemmanager blueman --noconfirm
-
-			sudo systemctl enable ModemManager
-			sudo systemctl enable bluetooth
-			sudo systemctl start ModemManager
-			sudo systemctl start bluetooth
-
-			echo "enable_uart=1" > /boot/config.txt
-			echo "dtparam=audio=on" >> /boot/config.txt
-			echo "hdmi_drive=2" >> /boot/config.txt
-			echo "audio_pwm_mode=2" >> /boot/config.txt
-			echo "disable_overscan=1" >> /boot/config.txt
-			echo "gpu_mem=64" >> /boot/config.txt
-			echo "cma=512" >> /boot/config.txt
-			echo "dtoverlay=vc4-fkms-v3d" >> /boot/config.txt
-			echo "max_framebuffers=2" >> /boot/config.txt
-
-			echo " "
-			echo -e "=============== OK =============== \n" 
-			read -r -p "Press Enter to continue..."
-
-}
-
-function aur {
-
-	clear
-	echo -e "=============== AUR (YAY ASKS YOU YOUR PASSWORD, PAY ATTENTION) ===============  \n" 
-
-	pacman -S --needed base-devel fakeroot packer go --noconfirm
-
-	sudo -u "$SUDOUSER" bash -c 'cd; git clone https://aur.archlinux.org/yay-bin.git'
-	sudo -u "$SUDOUSER" bash -c 'cd; cd yay-bin; makepkg -si'
-	sudo -u "$SUDOUSER" bash -c 'cd; rm -rf yay-bin'
+	chown "$SUDOUSER" /home/"$SUDOUSER"/.xinitrc
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "Presione Enter para continuar..."
 
 }
 
@@ -444,11 +310,11 @@ function ohmyzsh {
 
 	chown "$SUDOUSER" /home/"$SUDOUSER"/omz.sh
 
-	echo "We create a script called omz.sh in your home directory, after reboot, use chmod +x at omz.sh"
+	echo "Hemos creado un script llamado omz.sh en tu carpeta de home, después de reiniciar, usa chmod +x omz.sh"
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "Presione Enter para continuar..."
 
 }
 
@@ -456,56 +322,41 @@ function software {
 
 	systemctl mask lvm2-monitor
 
-		dialog --title "More Sofware!!" --backtitle "036 Creative Studios" \
-		--yesno "This script has a little pack of software, Do you like it?\n \
+	echo "disable_overscan=1" >> /boot/config.txt
+	echo "hdmi_drive=2" >> /boot/config.txt
+
+	dialog --title "Más Sofware!!" --backtitle "036 Creative Studios" \
+		--yesno "Este script tiene un pequeño pack de software, ¿Te gusta?\n \
 			-> baobab \n \
 			-> ntfs-3g \n \
-			-> exfatprogs \n \
 			-> exfat-utils \n \
 			-> xrdp \n \
 			-> xarchiver \n \
-			-> xorgxrdp \n \
-			-> xorgxrdp \n \
-			-> visual-studio-code \n \
-			-> rpi-eeprom-git \n \
-			-> rpi-imager \n \
-			-> box64 \n \
+			-> synaptic \n \
+			-> neofetch \n \
+			-> vlc \n \
+			-> gdebi \n \
 			-> numix-gtk-theme-git\n \
-			-> numix-icon-theme \n \
-			-> preload " 26 65
+			-> numix-icon-theme " 26 65
 	clear
 	response=$?
 
 	if [ $response -eq 0 ]; then
-	
+
 	clear
 	echo -e "=============== SOFTWARE =============== \n" 
 
-	touch /home/"$SUDOUSER"/software.sh
+	sudo apt install -y xrdp gdebi synaptic aptitude neofetch vlc libwnck-common libwnck22 \
+		baobab ntfs-3g exfat-fuse exfat-utils xarchiver numix-gtk-theme numix-icon-theme-circle
 
-	echo allowed_users=anybody > /etc/X11/Xwrapper.config
-
-	echo '!#/bin/bash' > /home/"$SUDOUSER"/software.sh
-	echo 'yay -S baobab ntfs-3g exfatprogs exfat-utils \' >> /home/"$SUDOUSER"/software.sh
-	echo 'xarchiver gparted xrdp \' >> /home/"$SUDOUSER"/software.sh
-	echo 'xorgxrdp pi-bluetooth visual-studio-code-bin preload \' >> /home/"$SUDOUSER"/software.sh
-	echo 'rpi-eeprom-git rpi-imager box64 \' >> /home/"$SUDOUSER"/software.sh
-	echo 'brave-bin exe-thumbnailer github-desktop-bin gobject-introspection libdbusmenu-gtk2 \' >> /home/"$SUDOUSER"/software.sh
-	echo 'libdbusmenu-glib libdbusmenu-gtk3 appmenu-gtk-module numix-gtk-theme \' >> /home/"$SUDOUSER"/software.sh
-	echo 'numix-icon-theme-git numix-circle-icon-theme-git' >> /home/"$SUDOUSER"/software.sh
-
-	echo 'systemctl enable xrdp' >> /home/"$SUDOUSER"/software.sh
-	echo 'systemctl enable xrdp-sesman' >> /home/"$SUDOUSER"/software.sh
-	echo 'systemctl enable preload' >> /home/"$SUDOUSER"/software.sh
-		
-	chown "$SUDOUSER" /home/"$SUDOUSER"/software.sh
-
-	echo "We create a script called software.sh in your home directory, after reboot, use chmod +x at software.sh"
+	adduser xrdp ssl-cert
+	sudo systemctl enable xrdp
+	sudo systemctl enable xrdp-sesman
+	sudo systemctl enable preload
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
-
+	read -r -p "Presione Enter para continuar..."
 
 	elif [ $response -eq 1 ]; then
 		clear
@@ -519,9 +370,9 @@ function software {
 function finisher {
 
 	clear
-	dialog --msgbox 'READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub' 7 50
+	dialog --msgbox 'LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, repórtalo a 036raspberry' 7 50
 	clear
-	echo "Please reboot your rpi4 to make changes"
+	echo "Por favor reinicia tu rpi4 para realizar los cambios"
 	exit 0
 }
 

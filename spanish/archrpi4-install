@@ -73,7 +73,7 @@ function usbstat {
 	VERIFYUSB=$(find /dev/disk/by-id/ -name 'usb*' | sort -n | sed 's/^\/dev\/disk\/by-id\///')
 	if [ "$VERIFYUSB" == "" ]; then
 		clear
-		echo "ERROR: There's no USB drives connected in this PC, please connect your SD Card in a USB SD Card Reader"
+		echo "ERROR: No hay USBs conectados en tu PC, por favor conecta tu tarjeta SD en un lector USB"
 		exit 1
 	fi
 }
@@ -95,7 +95,7 @@ function verify {
 
 	if [ "$OPERATING" != "GNU/Linux" ]; then
 		clear
-		echo 'ERROR: Your Operating System is not GNU/Linux, exiting'
+		echo 'ERROR: Este sistema no es GNU/Linux, saliendo'
 		exit 1
 	fi
 
@@ -103,7 +103,7 @@ function verify {
 
     if [[ "$PING" =~ unreachable* ]]; then
 		clear
-		echo "ERROR: This PC doesn't have internet connection, please check"
+		echo "ERROR: No tienes conexión a internet, por favor revisa e inténtalo de nuevo"
 		exit 1
 	fi
 
@@ -112,7 +112,7 @@ function verify {
 	local res=$?
 
 	if [ $res -eq 1 ]; then
-		echo "dialog is not available in this system, please install it"
+		echo "dialog no está disponible en tu sistema, por favor instálalo"
 		exit 1
 	fi
 	
@@ -121,7 +121,7 @@ function verify {
 	local res=$?
 
 	if [ $res -eq 1 ]; then
-		echo "parted is not available in this system, please install it"
+		echo "parted no está disponible en tu sistema, por favor instálalo"
 		exit 1
 	fi
 	
@@ -130,7 +130,7 @@ function verify {
 	local res=$?
 
 	if [ $res -eq 1 ]; then
-		echo "wget is not available in this system, please install it"
+		echo "wget no está disponible en tu sistema, por favor instálalo"
 		exit 1
 	fi
 	
@@ -139,11 +139,11 @@ function verify {
 	local res=$?
 
 	if [ $res -eq 1 ]; then
-		echo "bsdtar is not available in this system (libarchive), please install it"
+		echo "bsdtar no está disponible en tu sistema (libarchive), por favor instálalo"
 		exit 1
 	fi
 
-	echo "All dependencies is ok!"
+	echo "Todo ok!"
 
 	START=$(date +%s)
 	CHARS="/-\|"
@@ -162,7 +162,7 @@ function diskmenu {
 	clear
 	usbstat
 
-	dialog --msgbox "ATTENTION!!! Your SD card would be listed as a USB device, ensure that your SD is empty and ready for format" 7 70
+	dialog --msgbox "ATENCIÓN!!! Tu tarjeta SD debe ser mostrado como un dispositivo USB, verifica que tu SD está vacía y lista para formatear" 7 70
 
 	clear
 
@@ -200,8 +200,8 @@ function diskmenu {
 		COUNT=$(( COUNT + 1 ))
 	done
 
-	dialog --clear --backtitle "036 Creative Studios" --title "Format a Device" \
-		--menu "Choose a device"\
+	dialog --clear --backtitle "036 Creative Studios" --title "Tarjeta SD" \
+		--menu "Elige un dispositivo para formatear"\
 		15 50 4 "${ARGSUSB[@]}" 2>"${DISKMENUTEMP}"
 
 	CHOICE=$(<"${DISKMENUTEMP}")
@@ -220,15 +220,15 @@ function diskformat() {
 		exit 0
 	fi
 
-	dialog --title "DANGER ZONE!!!" --backtitle "036 Creative Studios" \
-		--yesno "This device will be format Continue? \n $1" 7 60
+	dialog --title "ZONA DE PELIBRO!!!" --backtitle "036 Creative Studios" \
+		--yesno "Este dispositivo se va a formatear ¿Continuar? \n $1" 7 60
 
 	clear
 	response=$?
 
 	if [ $response -eq 0 ]; then
 	
-		echo -e "=============== NEW PARTITION TABLE TO SD CARD =============== \n" 
+		echo -e "=============== NUEVA TABLA DE PARTICIÓN EN LA TARJETA SD =============== \n" 
 
 		parted --script "$1" \
 			mklabel msdos \
@@ -239,10 +239,10 @@ function diskformat() {
 
 		echo " "
 		echo -e "=============== OK =============== \n" 
-		read -r -p "Press Enter to continue..."
+		read -r -p "Presione Enter para continuar..."
 		clear
 
-		echo -e "=============== FORMAT/MOUNT ROOT AND BOOT FILESYSTEMS =============== \n" 
+		echo -e "=============== FORMATEAR Y MONTAR LOS SISTEMAS DE RAIZ Y ARRANQUE =============== \n" 
 
 		mkfs.ext4 "$1"2
 		mkfs.fat -F32 "$1"1
@@ -254,7 +254,7 @@ function diskformat() {
 
 		echo " "
 		echo -e "=============== OK =============== \n" 
-		read -r -p "Press Enter to continue..."
+		read -r -p "Presione Enter para continuar..."
 		clear
 
 		baseinstall
@@ -268,7 +268,7 @@ function diskformat() {
 
 function baseinstall {
 
-	echo -e "=============== INSTALL ROOT AND BOOT FILESYSTEMS, PLEASE WAIT  =============== \n" 
+	echo -e "=============== INSTALAR LOS SISTEMAS DE RAÍZ Y ARRANQUE, POR FAVOR ESPERE  =============== \n" 
 
 	wget http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz -P /mnt/root/
 	bsdtar -xpf /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz -C /mnt/root/
@@ -289,7 +289,7 @@ function baseinstall {
 
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "Presione Enter para continuar..."
 	clear
 
 	finisher
@@ -298,8 +298,8 @@ function baseinstall {
 
 function finisher {
 	clear
-	dialog --msgbox "At the superuser home directory, we put a configurer script if you want" 8 60
-	dialog --msgbox 'READY!!!, Your SD was installed with Arch Linux ARM for Raspberry Pi 4, login as root/root, if you have errors, please report at 036raspberry in GitHub' 10 60
+	dialog --msgbox "En la carpeta home de root está disponible el script de configuración, si lo deseas" 8 60
+	dialog --msgbox 'LISTO!!!, Tu SD fue instalada con Arch Linux ARM para la Raspberry Pi 4, inicia sesión como root/root, si tienes errores, repórtalo a 036raspberry' 10 60
 	clear
 	exit 0
 }
