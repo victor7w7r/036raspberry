@@ -106,7 +106,7 @@ function verify {
     fi
 	
     if [ "$ARCH" != "aarch64" ]; then
-        echo "ERROR: This script is only intended to run on x86_64 PCs."
+        echo "ERROR: This script is only intended to run on aarch64 devices."
         exit 1
     fi
 
@@ -166,7 +166,7 @@ function verify {
 function packages {
 	clear
 
-	echo -e "=============== CORE PACKAGES =============== \n" 
+	echo -e "=============== INSTALL CORE PACKAGES =============== \n" 
 
 	dnf install rsync sudo nano git net-tools wget nano e2fsprogs \
 		cockpit glibc-all-langpacks glibc-langpack-es -y
@@ -351,7 +351,7 @@ function kvm {
 
 	echo -e "=============== KVM ===============  \n" 
 
-	dnf module install virt -Y
+	dnf module install virt -y
 	dnf install virt-install virt-viewer virt-manager cockpit-machines -y
 	virt-host-validate qemu
 	systemctl enable libvirtd
@@ -399,15 +399,10 @@ function ohmyzsh {
 
 function software {
 
-	systemctl disable packagekitd
-	dnf remove PackageKit --assumeyes
-	echo "enabled=0" >> /etc/yum/pluginconf.d/refresh-packagekit.conf
-
 	dialog --title "More Sofware!!" --backtitle "036 Creative Studios" \
 		--yesno "This script has a little pack of software, Do you like it?\n \
 			-> baobab \n \
 			-> ntfs-3g \n \
-			-> gparted \n \
 			-> nautilus \n \
 			-> gedit \n \
 			-> tar \n \
@@ -423,7 +418,7 @@ function software {
 	clear
 	echo -e "=============== SOFTWARE =============== \n" 
 
-	dnf install baobab ntfs-3g gparted exfatprogs nautilus gedit tar yum-utils --assumeyes
+	dnf install baobab ntfs-3g exfatprogs nautilus gedit tar yum-utils --assumeyes
 
 	dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm --assumeyes
 	dnf install numix-gtk-theme --assumeyes
@@ -436,10 +431,6 @@ function software {
 	echo -e "=============== OK =============== \n" 
 	read -r -p "Press Enter to continue..."
 
-
-	elif [ $response -eq 1 ] || [ $response -eq 255 ]; then
-		clear
-		return
 	else
 		clear
 		return
