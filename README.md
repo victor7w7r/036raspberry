@@ -24,9 +24,9 @@ Configuration Scripts for Arch Linux/Raspberry OS Lite and Oracle for Raspberry 
   - Extra Software
 
 - :warning: **Only Raspberry Pi aarch64**
-  - armhf/armv7 not work
+  - armhf/armv7 not works
 
-## archpi4-install?
+## archrpi4-install?
 
 - :information_source: The objective of this script is detect your SD Card in a USB SD Reader, this will make partitions and format in that card, and this script downloads the latest Arch Linux ARM tarball for unpack and get your Arch system ready, it puts the archrpi4-config script in the home of root user, only for Raspberry Pi aarch64
 
