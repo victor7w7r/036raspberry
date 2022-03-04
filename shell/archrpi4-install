@@ -1,0 +1,338 @@
+#!/usr/bin/env bash
+
+if [ "$(id -u)" -ne 0 ]; then
+	echo "ERROR: You need to be root. / Necesitas ser superusuario."
+	exit 1
+fi
+
+rm /tmp/diskmenutemp.sh* 2> /dev/null
+DISKMENUTEMP=/tmp/diskmenutemp.sh.$$
+
+function cleanup { rm $DISKMENUTEMP; $; exit; }
+trap cleanup; SIGHUP SIGINT SIGTERM
+
+function core { clear; language; cover; sleep 1s; verify; usbstat; diskmenu; }
+
+function printer() {
+
+    local RED="\e[31m"; local GREEN="\e[32m"; local YELLOW="\e[33m"
+    local RESET="\e[0m"; local MESSAGE_TYPE=""; local MESSAGE=""
+    MESSAGE_TYPE="${1}"; POSITION="${2}"
+
+	local DICTIONARY_ENG=(
+		"Your Operating System is not GNU/Linux, exiting"
+		"This PC doesn't have internet connection, please check"
+		"dialog is not available in this system, please install it"
+		"parted is not available in this system, please install it"
+		"wget is not available in this system, please install it"
+		"bsdtar is not available in this system (libarchive), please install it"
+		"All dependencies is ok!"
+		"=============== NEW PARTITION TABLE TO SD CARD =============== \n" 
+		"=============== FORMAT/MOUNT ROOT AND BOOT FILESYSTEMS =============== \n" 
+		"=============== INSTALL ROOT AND BOOT FILESYSTEMS, PLEASE WAIT  =============== \n" 
+		"There's no USB drives connected in this PC, please connect your SD Card in a USB SD Card Reader"
+	)
+
+	local DICTIONARY_ESP=(
+		"Este sistema no es GNU/Linux, saliendo"
+		"No tienes conexión a internet, por favor revisa e inténtalo de nuevo"
+		"dialog no está disponible en tu sistema, por favor instálalo"
+		"parted no está disponible en tu sistema, por favor instálalo"
+		"wget no está disponible en tu sistema, por favor instálalo"
+		"bsdtar no está disponible en tu sistema (libarchive), por favor instálalo"
+		"Todo ok!"
+		"=============== NUEVA TABLA DE PARTICIÓN EN LA TARJETA SD =============== \n" 
+		"=============== FORMATEAR Y MONTAR LOS SISTEMAS DE RAIZ Y ARRANQUE =============== \n" 
+		"=============== INSTALAR LOS SISTEMAS DE RAÍZ Y ARRANQUE, POR FAVOR ESPERE  =============== \n" 
+		"No hay USBs conectados en tu PC, por favor conecta tu tarjeta SD en un lector USB"
+	)
+
+	if [ "$LANGUAGE" -eq 1 ]; then
+		case ${MESSAGE_TYPE} in
+			print) echo -e "${DICTIONARY_ENG[$POSITION]}";;
+			info) echo -e "[${GREEN}+${RESET}] INFO: ${DICTIONARY_ENG[$POSITION]}";; 
+			warn) echo -e "[${YELLOW}*${RESET}] WARNING: ${DICTIONARY_ENG[$POSITION]}";; 
+			error) echo -e "[${RED}!${RESET}] ERROR: ${DICTIONARY_ENG[$POSITION]}";;
+			*) echo -e "[?] UNKNOWN: ${MESSAGE}";;
+		esac
+	else 
+		case ${MESSAGE_TYPE} in
+			print) echo -e "${DICTIONARY_ESP[$POSITION]}";;
+			info) echo -e "[${GREEN}+${RESET}] INFO: ${DICTIONARY_ESP[$POSITION]}";; 
+			warn) echo -e "[${YELLOW}*${RESET}] ADVERTENCIA: ${DICTIONARY_ESP[$POSITION]}";; 
+			error) echo -e "[${RED}!${RESET}] ERROR: ${DICTIONARY_ESP[$POSITION]}";;
+			*) echo -e "[?] UNKNOWN: ${MESSAGE}";;
+		esac
+	fi
+    
+}
+
+function reader() {
+
+	local DICTIONARY_ENG=(
+		"ATTENTION!!! Your SD card would be listed as a USB device, ensure that your SD is empty and ready for format"
+		"Format a Device" 
+		"Choose a device"
+		"DANGER ZONE!!!"
+		"This device will be format Continue? \n"
+		"Press Enter to continue..."
+		"At the superuser home directory, we put a configurer script if you want" 
+		"READY!!!, Your SD was installed with Arch Linux ARM for Raspberry Pi 4, login as root/root, if you have errors, please report at 036raspberry in GitHub"
+	)
+
+	local DICTIONARY_ESP=(
+		"ATENCIÓN!!! Tu tarjeta SD debe ser mostrado como un dispositivo USB, verifica que tu SD está vacía y lista para formatear"
+		"Tarjeta SD"
+		"Elige un dispositivo para formatear"
+		"Este dispositivo se va a formatear ¿Continuar? \n"
+		"Presione Enter para continuar..."
+		"En la carpeta home de root está disponible el script de configuración, si lo deseas"
+		"LISTO!!!, Tu SD fue instalada con Arch Linux ARM para la Raspberry Pi 4, inicia sesión como root/root, si tienes errores, repórtalo a 036raspberry"
+	)
+
+	if [ "$LANGUAGE" -eq 1 ]; then
+		echo "${DICTIONARY_ENG[$POSITION]}"
+	else 
+		echo "${DICTIONARY_ESP[$POSITION]}"
+	fi
+
+}
+
+function commandverify() {
+	if ! command -v "$1" &> /dev/null; then return 1; else return 0; fi
+}
+
+function language {
+		
+	echo "Bienvenido / Welcome"
+	echo "Please, choose your language / Por favor selecciona tu idioma"
+	echo "1) English"; echo "2) Espanol"
+	read -n 1 -r OPTION
+	case $OPTION in
+		1) LANGUAGE=1;;
+		2) LANGUAGE=2;;
+		*) exit 1;;
+	esac
+}
+
+function cover {
+	
+	clear
+	echo '                                     `"~>v??*^;rikD&MNBQku*;`                                           '
+	echo '                                `!{wQNWWWWWWWWWWWWWWWNWWWWWWNdi^`                                       '
+	echo '                              .v9NWWWWNRFmWWWWWWWWWWWWga?vs0pNWWWMw!                                    '
+	echo '                            !9WWWWWWU>`>&WWWWWWUH!_JNWWWWWQz  ^EWWWWg|                                  '
+	echo '                           _SWWWWWNe: /RWWWWWWNNHBRuyix&WWWWWg2?-"VNWWW6_                               '
+	echo '                         "kWWWWWNz. .zNWWWWWWw=, ^NsLQNW**MWWWW&WQJuNWWWNr.                             '
+	echo '                       .FNWWWWNu. rL&WWWWWWg!!*;^Jo!*BN0aFx)>|!;;;;;!~\r)xFwaao?|,                      '
+	echo '                     .sNWWWWMi` -,#WWWWWWNi"` Siwu UWv  .;^|^;`               .!*lUSF*;                 '
+	echo '                    )BWWWWWo.   9NWWWWWW0; ;PvLc*aU&^ |L=-``.;>*=                   ;)wmkL_             '
+	echo '                  _QWWWWWq"   .aWWWWWWWs`  rF<>\^gQ, /i   ,;;.  !2                      ,*k0F\`         '
+	echo '                 *NWWWWNv   ,/&WWWWWWNr "!SL92l)BU.  ^x   x. L,  I_                        `>P&F;       '
+	echo '               `2WWWWWg;    !BWWWWWWD"   .s;!\xNa     /L,   !L`  P,                           .?&gr     '
+	echo '              ,QWWWWWS`  >;LWWWWWWWk`_;!\u|  ^Ml        ;~!^,  `iv                              `?Ng^   '
+	echo '             ^BWWWWWi   *i7NWWWWWWc "a;;?ii"~NV             `;?},                                 ,9WF  '
+	echo '            >WWWWWB!  ` ;8WWWWWWM=  r>`;F/2wNc          .;||!,                                      oW#.'
+	echo '           ?WWWWW#"  `2;7NWWWWW&_ =_=u%ir`>Wi                                                        PW6'
+	echo '          rWWWWWc   `||>WWWWWWU.  r^?7;!v*W)                                                         ,WW|'
+	echo '         ^NWWWB!  ! \jrmWWWWWw  `vL.k*\vkW$>rr*r;`        ;rL{7)>!`                                   mWF'
+	echo '        .BWWW$,   ,u. PWWWWW) ,r`)|)!__LWv     `;L"     |s>:```._|JuL                                 qWE'
+	echo '        uWWWH` .vi"Fo*WWWWN>   ^v  r*`>W}                                                             &Ws '
+	echo '       ;WWWP`  `=*ox_pWWWB; ^)i`9xr,#7W*            .     ,\*`                                       |WW! '
+	echo '       SWWD` >LLr^_y*NWWQ"  ,<?P~|iF0W}            ~;   v_ `o;                                      .0WU'
+	echo '      ^WW0,.!F2xULFi5WW0` >7vr!!z_`*Wv             `|;;^!,~!`                                      .8W8.'
+	echo '      dWN;`>JyrkIr`!NWN! ,uFia!9?*2WI                                                             ;QWD.'
+	echo '     =WW7`_S)~Fxv| xWWi ;}drqa=;=uWRNmL,                                                         rWWt`  '
+	echo '     DWP`;LiL;}c*rsWW&`,Po_e7L/ =Nc `>oD$aaw%ouic7)*r>=|^^~!;;;;;;;;;;;;;~^\>rvL{JctxiiiiuusoF2kgBS/  '
+	echo '    ;WN\\Uy>*rF.,pWWWr-;?J"vov^^Nu         `.,"_;!~^\=>r*v?LL{}Jjjjjjj}}7?vr>\^!;____-""",,,..``    '
+	echo '    iW?_**>^;>"~&EeWg=|liv*s!~?NL'
+	echo '    wWc*$>*~~L6Ni QW! \Uursx >WJ'
+	echo '    2M)o*_F "R0; .Wd~U7,``;*iN>'
+	echo '    xWe?vI7cMu`  ,W&>xssr~=PB|'
+	echo '    "W% ,cBZ_    `M2l\/i,,QQ,'
+	echo '     |U$di_       UBu>i)yBy`'
+	echo '                  ^Wx,rDR!'
+	echo '                   \ZUl^'
+	echo '.oPYo. .oPYo. .pPYo.   .oPYo.                       o   o                 .oPYo.   o              8  o                '
+	echo '8  .o8     `8 8        8    8                       8                     8        8              8                   '
+	echo '8 .P`8   .oP` 8oPYo.   8      oPYo. .oPYo. .oPYo.  o8P o8 o    o .oPYo.   `Yooo.  o8P o    o .oPYo8 o8 .oPYo. .oPYo.  '
+	echo '8.d` 8    `b. 8`  `8   8      8  `` 8oooo8 .oooo8   8   8 Y.  .P 8oooo8       `8   8  8    8 8    8  8 8    8 Yb..   '
+	echo '8o`  8     :8 8.  .P   8    8 8     8.     8    8   8   8 `b..d` 8.            8   8  8    8 8    8  8 8    8   `Yb. '
+	echo '`YooP` `YooP` `YooP`   `YooP` 8     `Yooo` `YooP8   8   8  `YP`  `Yooo`   `YooP`   8  `YooP` `YooP`  8 `YooP` `YooP. '
+	echo ':.....::.....::.....::::.....:..:::::.....::.....:::..::..::...:::.....::::.....:::..::.....::.....::..:.....::.....:'
+	echo ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
+	echo ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
+}
+
+function usbverify {
+
+	VERIFYUSB=$(find /dev/disk/by-id/ -name 'usb*' | sort -n | sed 's/^\/dev\/disk\/by-id\///')
+	if [ "$VERIFYUSB" == "" ]; then clear; printer error 10; exit 1; fi
+}
+
+function verify {
+
+    OPERATING=$(uname -o); SELECTOR=""
+
+	if [ "$OPERATING" != "GNU/Linux" ]; then
+		clear; printer error 0; exit 1
+	fi
+
+    PING=$(ping -c 1 8.8.8.8 2>&1) 
+
+    if [[ "$PING" =~ unreachable* ]]; then
+		clear; printer error 1; exit 1
+	fi
+
+	SELECTOR="dialog"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 1 ]; then
+		clear; printer error 2; exit 1
+	fi
+	
+	SELECTOR="parted"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 1 ]; then
+		clear; printer error 3; exit 1
+	fi
+	
+	SELECTOR="wget"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 1 ]; then
+		clear; printer error 4; exit 1
+	fi
+	
+	SELECTOR="bsdtar"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 1 ]; then
+		clear; printer error 5; exit 1
+	fi
+
+	printer print 6; START=$(date +%s); CHARS="/-\|"
+
+	while [[ $(($(date +%s) - START)) -lt 2 ]]; do
+		for (( i=0; i<${#CHARS}; i++ )); do
+			sleep 0.08; echo -en "${CHARS:$i:1}" "\r"
+		done
+	done
+
+}
+
+function diskmenu {
+
+	clear; usbverify; RES1=$(reader 0)
+	RES2=$(reader 1); RES3=$(reader 2)
+	dialog --msgbox "$RES1" 7 70; clear
+
+	local DIRTYDEVS=(); local BLOCK=()
+	local COUNT=0; local MODEL=0
+	local DEVICE=0; local ARGSUSB=()
+
+	USBS=$(find /dev/disk/by-id/ -name 'usb*' | sort -n | sed 's/^\/dev\/disk\/by-id\///')
+
+	for DEVICE in $USBS; do
+		DIRTYDEVS[$COUNT]=$(readlink "/dev/disk/by-id/$DEVICE") 
+		COUNT=$(( COUNT + 1 ))
+	done
+	for DEV in "${DIRTYDEVS[@]}"; do
+		ABSOLUTEPARTS=$(echo "$DEV" | sed 's/^\.\.\/\.\.\//\/dev\//' | sed '/.*sd[[:alpha:]]$/d')
+		if [ "$ABSOLUTEPARTS" == "" ]; then
+			BLOCK[$BLOCKCOUNT]=$(echo "$DEV" | sed 's/^\.\.\/\.\.\///')
+			BLOCKCOUNT=$(( BLOCKCOUNT + 1 ))
+		fi
+	done
+	COUNT=0
+	for PART in "${BLOCK[@]}"; do
+		DEVICE="/dev/$PART"
+		BLOCKSTAT="${BLOCK[$COUNT]}"
+		SIZE=$(lsblk -no SIZE /dev/"$PART" | head -1 | sed s/..//)
+		MODEL="$(cat /sys/class/block/"$BLOCKSTAT"/device/model)"
+		ARGSUSB+=("$DEVICE" "$MODEL $SIZE")
+		COUNT=$(( COUNT + 1 ))
+	done
+	dialog --clear --backtitle "036 Creative Studios" --title "$RES2" \
+		--menu "$RES3"\
+		15 50 4 "${ARGSUSB[@]}" 2>"${DISKMENUTEMP}"
+
+	CHOICE=$(<"${DISKMENUTEMP}")
+
+	case $CHOICE in
+		"$CHOICE") diskformat "$CHOICE";;
+		*) clear;;
+	esac
+
+}
+
+function diskformat() {
+	
+	if [ "$1" == "" ]; then clear; exit 0; fi
+	RES4=$(reader 3); RES5=$(reader 4); RES6=$(reader 5)
+
+	dialog --title "$RES4" --backtitle "036 Creative Studios" \
+		--yesno "$RES5\n $1" 7 60
+
+	response=$?; clear
+
+	if [ $response -eq 0 ]; then
+		printer print 7
+		parted --script "$1" \
+			mklabel msdos \
+			mkpart primary fat32 1MiB 200MiB \
+			set 1 boot on \
+			mkpart primary ext4 200MiB 100% \
+			print
+		echo " "
+		echo -e "=============== OK =============== \n" 
+		read -r -p "$RES6"
+		clear; printer print 8
+
+		mkfs.ext4 "$1"2
+		mkfs.fat -F32 "$1"1
+		mkdir /mnt/boot 
+		mkdir /mnt/root
+		mount "$1"2 /mnt/root
+		mount "$1"1 /mnt/boot
+
+		echo " "
+		echo -e "=============== OK =============== \n" 
+		read -r -p "$RES6"
+		clear; baseinstall
+	else clear; exit 1
+	fi
+
+}
+
+function baseinstall {
+
+	RES6=$(reader 5); printer print 8
+	wget http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz -P /mnt/root/
+	bsdtar -xpf /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz -C /mnt/root/
+	sync
+	rm /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz
+	mv /mnt/root/boot/* /mnt/boot/
+	sed -i 's/mmcblk0/mmcblk1/g' /mnt/root/etc/fstab
+	sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin Yes/' \
+		/mnt/root/etc/ssh/sshd_config &> /dev/null
+	wget https://raw.githubusercontent.com/victor7w7r/036raspberry/master/archrpi4-config -P /mnt/root/root/
+	chmod +x /mnt/root/root/archrpi4-config
+	umount /mnt/boot 
+	umount /mnt/root 
+	rm -rf /mnt/boot 
+	rm -rf /mnt/root
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES6"
+	clear; finisher
+
+}
+
+function finisher {
+	clear; RES7=$(reader 6); RES8=$(reader 7)
+	dialog --msgbox "$RES7" 8 60
+	dialog --msgbox "$RES8" 10 60
+	clear; exit 0
+}
+
+core
+
+[ -f $DISKMENUTEMP ] && rm $DISKMENUTEMP

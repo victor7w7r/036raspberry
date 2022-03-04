@@ -1,0 +1,398 @@
+#!/usr/bin/env bash
+
+if [ "$(id -u)" -ne 0 ]; then
+	echo "ERROR: You need to be root. / Necesitas ser superusuario."
+	exit 1
+fi
+
+rm /tmp/localestemp.sh* 2> /dev/null
+rm /tmp/hosttemp.sh* 2> /dev/null
+rm /tmp/graphicaltemp.sh* 2> /dev/null
+	
+LOCALESTEMP=/tmp/localestemp.sh.$$
+HOSTTEMP=/tmp/hosttemp.sh.$$
+GRAPHICALTEMP=/tmp/graphicaltemp.sh.$$
+
+SUDOUSER=""
+
+function cleanup { rm $LOCALESTEMP; $HOSTTEMP; $GRAPHICALTEMP exit; }
+
+trap cleanup; SIGHUP SIGINT SIGTERM
+
+function core { clear; language; cover; sleep 1s; verify; packages
+				newuser; graphical; ohmyzsh; software; finisher;}
+
+function printer() {
+
+    local RED="\e[31m"; local GREEN="\e[32m"; local YELLOW="\e[33m"
+    local RESET="\e[0m"; local MESSAGE_TYPE=""; local MESSAGE=""
+    MESSAGE_TYPE="${1}"; POSITION="${2}"
+
+	local DICTIONARY_ENG=(
+		"Your Operating System is not GNU/Linux, exiting"
+		"This script is only intended to run on aarch64 Devices."
+		"This script is only intended to run on Raspberry Pi 4 Devices."
+		"APT is not available in this system, this system isn't Debian?"
+		"This Debian disto doesn't have a raspi-config app, please use Raspberry Pi OS Lite, exiting"
+		"Ok, is Raspbery Pi OS, but this is not a Raspberry Pi OS Lite, exiting"
+		"This PC doesn't have internet connection, please check"
+		"Updating Debian repositories..."
+		"lsb_release is not available in this system, installing"
+		"Your Operating System is not Debian, exiting"
+		"dialog is not available in this system, installing"
+		"All dependencies is ok!"
+		"=============== SYSTEM UPDATE  =============== \n" 
+		"=============== ROOT PASSWORD FOR YOUR SYSTEM =============== \n" 
+		"=============== CHANGE TO A SID REPOSITORIES AND DIST UPGRADE =============== \n" 
+		"=============== INSTALL CORE PACKAGES =============== \n" 
+		"=============== ADD A USER TO A SUDO GROUP =============== \n" 
+		"We create a script called omz.sh in your home directory, after reboot, use chmod +x at omz.sh"
+		"READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub"
+	)
+
+	local DICTIONARY_ESP=(
+		"Este sistema no es GNU/Linux, saliendo"
+		"Este script sólo se ejecuta en procesadores de aarch64"
+		"Este script sólo se ejecuta en Raspberry Pi 4"
+		"APT no está disponible, ¿Acaso esto no es Debian?"
+		"Este distro de Debian no tiene la aplicación raspi-config, por favor use Raspberry Pi OS Lite, saliendo"
+		"Bien, este es Raspberry Pi OS, pero no es Raspberry Pi OS Lite, saliendo"
+		"No tienes conexión a internet, por favor revisa e inténtalo de nuevo"
+		"Actualizando repositorios de Debian..."
+		"lsb_release no está disponible, instalando"
+		"Tu sistema operativo no es Debian, saliendo"
+		"dialog is no está disponible, instalando"
+		"Todo ok!"
+		"=============== ACTUALIZACIÓN DEL SISTEMA =============== \n" 
+		"=============== CONTRASEÑA DE ROOT PARA EL SISTEMA =============== \n" 
+		"=============== CAMBIO A LOS REPOSITORIOS DE SID Y ACTUALIZACIÓN DE DIST =============== \n"  
+		"=============== INSTALACIÓN DE PAQUETES BASE =============== \n" 
+		"=============== AGREGAR UN USUARIO DE SUDO =============== \n" 
+		"Hemos creado un script llamado omz.sh en tu carpeta de home, después de reiniciar, usa chmod +x omz.sh"
+		"LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, repórtalo a 036raspberry"
+	)
+
+	if [ "$LANGUAGE" -eq 1 ]; then
+		case ${MESSAGE_TYPE} in
+			print) echo -e "${DICTIONARY_ENG[$POSITION]}";;
+			info) echo -e "[${GREEN}+${RESET}] INFO: ${DICTIONARY_ENG[$POSITION]}";; 
+			warn) echo -e "[${YELLOW}*${RESET}] WARNING: ${DICTIONARY_ENG[$POSITION]}";; 
+			error) echo -e "[${RED}!${RESET}] ERROR: ${DICTIONARY_ENG[$POSITION]}";;
+			*) echo -e "[?] UNKNOWN: ${MESSAGE}";;
+		esac
+	else 
+		case ${MESSAGE_TYPE} in
+			print) echo -e "${DICTIONARY_ESP[$POSITION]}";;
+			info) echo -e "[${GREEN}+${RESET}] INFO: ${DICTIONARY_ESP[$POSITION]}";; 
+			warn) echo -e "[${YELLOW}*${RESET}] ADVERTENCIA: ${DICTIONARY_ESP[$POSITION]}";; 
+			error) echo -e "[${RED}!${RESET}] ERROR: ${DICTIONARY_ESP[$POSITION]}";;
+			*) echo -e "[?] UNKNOWN: ${MESSAGE}";;
+		esac
+	fi
+    
+}
+
+function reader() {
+
+	local DICTIONARY_ENG=(
+		"Press Enter to continue..."
+		"The raspi-config app will be open, please change your configurations"
+		"Escribe tu nuevo usuario: "
+		"More Sofware!!"
+		"This script has a little pack of software, Do you like it?\n"
+		"READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub"
+	)
+
+	local DICTIONARY_ESP=(
+		"Presione Enter para continuar..."
+		"La aplicación de raspi-config se va a abrir, por favor cambia las configuraciones pertinentes" 
+		"Write your new user: "
+		"Más Sofware!!"
+		"Este script tiene un pequeño pack de software, ¿Te gusta?\n"
+		"LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, repórtalo a 036raspberry"
+	)
+
+	if [ "$LANGUAGE" -eq 1 ]; then
+		echo "${DICTIONARY_ENG[$POSITION]}"
+	else 
+		echo "${DICTIONARY_ESP[$POSITION]}"
+	fi
+
+}
+
+function commandverify() {
+	if ! command -v "$1" &> /dev/null; then return 1; else return 0; fi
+}
+
+function language {
+		
+	echo "Bienvenido / Welcome"
+	echo "Please, choose your language / Por favor selecciona tu idioma"
+	echo "1) English"; echo "2) Espanol"
+	read -n 1 -r OPTION
+	case $OPTION in
+		1) LANGUAGE=1;;
+		2) LANGUAGE=2;;
+		*) exit 1;;
+	esac
+}
+
+function verify {
+    ARCH=$(uname -m)
+    OPERATING=$(uname -o)
+	SELECTOR=""
+	PI="$(cat /sys/firmware/devicetree/base/model)"
+
+	if [ "$OPERATING" != "GNU/Linux" ]; then
+		clear; printer error 0; exit 1
+	fi
+
+    if [ "$ARCH" != "aarch64" ]; then
+		clear; printer error 1; exit 1
+    fi
+
+    if [[ "$PI" =~ ^Raspberry[[:space:]]Pi[[:space:]]4.* ]]; then
+        echo "ready" &> /dev/null
+	else
+		clear; printer error 2; exit 1 
+    fi
+
+    SELECTOR="apt"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 1 ]; then
+		clear; printer error 3; exit 1 
+	fi
+
+    SELECTOR="raspi-config"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 1 ]; then
+		clear; printer error 4; exit 1
+	fi
+
+	SELECTOR="openbox-lxde-session"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 0 ]; then
+		clear; printer error 5; exit 1
+	fi
+
+    PING=$(ping -c 1 8.8.8.8 2>&1) 
+
+    if [[ "$PING" =~ unreachable* ]]; then
+		clear; printer error 6; exit 1
+	fi
+
+    printer print 7; apt update &> /dev/null
+
+    SELECTOR="lsb_release"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 1 ]; then
+		printer error 8
+		apt install -y lsb-release -&> /dev/null
+	fi
+
+	IS_ARCH=$(lsb_release -is)
+
+	if [ "$IS_ARCH" != "Debian" ]; then
+		clear; printer error 9; exit 1
+	fi
+
+	SELECTOR="dialog"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 1 ]; then
+		clear; printer error 10; exit 1
+		apt install -y dialog &> /dev/null
+	fi
+
+	printer print 11
+
+	START=$(date +%s); CHARS="/-\|"
+
+	while [[ $(($(date +%s) - START)) -lt 2 ]]; do
+		for (( i=0; i<${#CHARS}; i++ )); do
+			sleep 0.08; echo -en "${CHARS:$i:1}" "\r"
+		done
+	done
+
+}
+
+function packages {
+	clear; RES1=$(reader 0); RES2=$(reader 1)
+
+	sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin Yes/' \
+	/etc/ssh/sshd_config &> /dev/null
+
+	printer print 12; apt upgrade -y
+		
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+
+	clear; printer print 13; passwd
+
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+	
+	clear printer print 14
+
+	mv /etc/apt/sources.list /etc/apt/sources.list.old
+	mv /etc/apt/sources.list.d /etc/apt/sources.list.d.old
+
+	echo "deb http://deb.debian.org/debian sid main contrib non-free" > /etc/apt/sources.list
+	echo "deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sources.list
+
+	apt update; apt dist-upgrade -y
+
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+
+	clear; printer print 15
+
+	apt install -y cockpit git net-tools wget vim rsync neofetch \
+		screen unrar p7zip vim network-manager-gnome zsh
+
+	systemctl enable NetworkManager.service
+	echo "Set managed=true" >> /etc/NetworkManager/NetworkManager.conf
+	systemctl disable dhcpcd.service
+
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+
+	dialog --msgbox "$RES2" 7 50; raspi-config
+
+}
+
+function newuser {
+
+	clear; printer print 16
+	RES1=$(reader 0); RES3=$(reader 2)
+	
+	read -r -p "$RES3" SUDOUSER
+	adduser "$SUDOUSER"
+	usermod -aG sudo victor7w7r
+
+	echo " "
+	echo -e "$RES1" 
+	read -r -p "Press Enter to continue..."
+}
+
+function graphical {
+
+	clear; RES1=$(reader 0)
+	echo -e "=============== XFCE =============== \n" 
+	
+	apt install -y xserver-xorg xfce4 xfce4-goodies xfce4-indicator-plugin \
+		blueman ttf-ubuntu-font-family firefox nemo cinnamon-l10n gdm3
+
+	touch /root/.xinitrc
+	echo 'export XAUTHORITY=${HOME}/.Xauthority' > /root/.xinitrc
+	echo 'xfce4-session' >> /root/.xinitrc	
+
+	touch /home/"$SUDOUSER"/.xinitrc
+	echo 'export XAUTHORITY=${HOME}/.Xauthority' > /home/"$SUDOUSER"/.xinitrc
+	echo 'xfce4-session' >>  /home/"$SUDOUSER"/.xinitrc
+
+	chown "$SUDOUSER" /home/"$SUDOUSER"/.xinitrc
+
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+
+}
+
+function ohmyzsh {
+
+	clear; RES1=$(reader 0)
+	echo -e "=============== OMZ =============== \n" 
+	touch /home/"$SUDOUSER"/omz.sh
+	echo '#!/bin/bash' > /home/"$SUDOUSER"/omz.sh
+	echo 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sudo ln -s "$HOME"/.zshrc /root/.zshrc' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sudo ln -s "$HOME"/.oh-my-zsh /root/.oh-my-zsh' >> /home/"$SUDOUSER"/omz.sh
+	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /home/"$SUDOUSER"/omz.sh
+	echo 'git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sed -i -e "s/plugins=(.*/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
+	chown "$SUDOUSER" /home/"$SUDOUSER"/omz.sh
+
+	echo '#!/bin/bash' > /root/omz.sh
+	echo 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"' >> /root/omz.sh
+	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /root/omz.sh
+	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /root/omz.sh
+	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /root/omz.sh
+	echo 'git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions' >> /root/omz.sh
+	echo 'sed -i -e "s/plugins=(.*/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/" .zshrc' >> /root/omz.sh
+	chmod +x /root/omz.sh
+
+	printer print 17
+	
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "Press Enter to continue..."
+
+}
+
+function software {
+
+	systemctl mask lvm2-monitor
+	RES1=$(reader 0); RES4=$(render 3); RES5=$(render 4)
+
+	echo "disable_overscan=1" >> /boot/config.txt
+	echo "hdmi_drive=2" >> /boot/config.txt
+
+		dialog --title "$RES4" --backtitle "036 Creative Studios" \
+		--yesno "$RES5 \
+			-> baobab \n \
+			-> ntfs-3g \n \
+			-> exfat-utils \n \
+			-> xrdp \n \
+			-> xarchiver \n \
+			-> synaptic \n \
+			-> neofetch \n \
+			-> vlc \n \
+			-> gdebi \n \
+			-> numix-gtk-theme-git\n \
+			-> numix-icon-theme " 26 65
+
+	response=$?; clear
+
+	if [ $response = 0 ]; then
+
+	clear
+	echo -e "=============== SOFTWARE =============== \n" 
+
+	sudo apt install -y xrdp gdebi synaptic aptitude neofetch vlc libwnck-common libwnck22 \
+		baobab ntfs-3g exfat-fuse exfat-utils xarchiver numix-gtk-theme numix-icon-theme-circle
+
+	adduser xrdp ssl-cert
+	sudo systemctl enable xrdp
+	sudo systemctl enable xrdp-sesman
+	sudo systemctl enable preload
+	
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+
+	elif [ $response -eq 1 ] || [ $response -eq 255 ]; then
+		clear; return
+	else
+		clear; exit 0
+	fi
+}
+
+function finisher {
+
+	RES6=$(render 5)
+
+	clear; dialog --msgbox "$RES6" 7 50
+	clear; printer print 18
+	exit 0
+}
+
+core
+
+[ -f $LOCALESTEMP ] && rm $LOCALESTEMP
+[ -f $HOSTTEMP ] && rm $HOSTTEMP
+[ -f $GRAPHICALTEMP ] && rm $GRAPHICALTEMP

@@ -1,0 +1,522 @@
+#!/usr/bin/env bash
+
+if [ "$(id -u)" -ne 0 ]; then
+	echo "ERROR: You need to be root. / Necesitas ser superusuario."
+	exit 1
+fi
+
+rm /tmp/localestemp.sh* 2> /dev/null
+rm /tmp/hosttemp.sh* 2> /dev/null
+	
+LOCALESTEMP=/tmp/localestemp.sh.$$
+HOSTTEMP=/tmp/hosttemp.sh.$$
+
+XRDPTOGGLE=0; SUDOUSER=""
+
+function cleanup { rm $LOCALESTEMP; $HOSTTEMP; exit; }
+
+trap cleanup; SIGHUP SIGINT SIGTERM
+
+function core { clear; cover; language; sleep 1s; verify; packages; hostnamer; localer
+				cockpit; newuser; graphical; remote; kvm; ohmyzsh; software; finisher; }
+
+
+function printer() {
+
+    local RED="\e[31m"; local GREEN="\e[32m"; local YELLOW="\e[33m"
+    local RESET="\e[0m"; local MESSAGE_TYPE=""; local MESSAGE=""
+    MESSAGE_TYPE="${1}"; POSITION="${2}"
+
+	local DICTIONARY_ENG=(
+		"Your Operating System is not GNU/Linux, exiting"
+		"This script is only intended to run on Oracle Linux"
+		"This script is only intended to run on aarch64 devices."
+		"This script is only intended to run on Raspberry Pi 4 Devices."
+		"DNF is not available in this system, this system isn't Oracle Linux, please use Oracle Linux 8?"
+		"This PC doesn't have internet connection, please check"
+		"Updating Oracle Linux Repositories... Please Wait"
+		"dialog is not available in this system, installing"
+		"All dependencies is ok!"
+		"=============== INSTALL CORE PACKAGES =============== \n"
+		"=============== COCKPIT SERVICE (IP:9090) =============== \n" 
+		"=============== ADD A USER TO A SUDO GROUP =============== \n" 
+		"We create a script called omz.sh in your home directory, after reboot, use chmod +x at omz.sh"
+		"READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub"
+	)
+
+	local DICTIONARY_ESP=(
+		"Este sistema no es GNU/Linux, saliendo"
+		"Este script sólo permite ejecutarse en Oracle Linux"
+		"Este script sólo se ejecuta en procesadores de aarch64"
+		"Este script sólo se ejecuta en Raspberry Pi 4"
+		"DNF no está disponible, ¿este sistema no es Oracle Linux?, instala Oracle Linux 8"
+		"No tienes conexión a internet, por favor revisa e inténtalo de nuevo"
+		"Actualizando repositorios de Oracle Linux... Por favor, espere"
+		"dialog no está disponible, instalando"
+		"Todo ok!"
+		"=============== PAQUETES BASE =============== \n" 
+		"=============== SERVICIO DE COCKPIT (IP:9090) =============== \n"
+		"=============== AGREGAR UN USUARIO DE SUDO =============== \n" 
+		"Hemos creado un script llamado omz.sh en tu carpeta de home, después de reiniciar, usa chmod +x omz.sh"
+		"LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, repórtalo a 036raspberry"
+	)
+
+	if [ "$LANGUAGE" -eq 1 ]; then
+		case ${MESSAGE_TYPE} in
+			print) echo -e "${DICTIONARY_ENG[$POSITION]}";;
+			info) echo -e "[${GREEN}+${RESET}] INFO: ${DICTIONARY_ENG[$POSITION]}";; 
+			warn) echo -e "[${YELLOW}*${RESET}] WARNING: ${DICTIONARY_ENG[$POSITION]}";; 
+			error) echo -e "[${RED}!${RESET}] ERROR: ${DICTIONARY_ENG[$POSITION]}";;
+			*) echo -e "[?] UNKNOWN: ${MESSAGE}";;
+		esac
+	else 
+		case ${MESSAGE_TYPE} in
+			print) echo -e "${DICTIONARY_ESP[$POSITION]}";;
+			info) echo -e "[${GREEN}+${RESET}] INFO: ${DICTIONARY_ESP[$POSITION]}";; 
+			warn) echo -e "[${YELLOW}*${RESET}] ADVERTENCIA: ${DICTIONARY_ESP[$POSITION]}";; 
+			error) echo -e "[${RED}!${RESET}] ERROR: ${DICTIONARY_ESP[$POSITION]}";;
+			*) echo -e "[?] UNKNOWN: ${MESSAGE}";;
+		esac
+	fi
+    
+}
+
+function reader() {
+
+	local DICTIONARY_ENG=(
+		"Press Enter to continue..."
+		"Please write your hostname (ex: A036-oracle)"
+		"America/Guayaquil is the timezone by default, if you want to change, here is the command\n\n \
+		timedatectl set-timezone REGION/CITY"
+		"Choose your keyboard layout and locale"
+		"Write your new user: "
+		"Graphical"
+		"Install XFCE as Desktop Environment?"
+		"Install Oracle Linux KVM Suite?"
+		"More Sofware!!"
+		"This script has a little pack of software, Do you like it?\n"
+		"READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub"
+	
+	)
+
+	local DICTIONARY_ESP=(
+		"Presione Enter para continuar..."
+		"Por favor escriba su hostname (ex: A036-oracle)"
+		"America/Guayaquil es el timezone por defecto, si quieres cambiarlo por algún otro, aquí está la orden\n\n \
+		timedatectl set-timezone REGION/CITY"
+		"Elige tu distribución de teclado y tu locale"
+		"Escribe tu nuevo usuasrio: "
+		"Entorno Gráfico"
+		"¿Instalar XFCE como Entorno gráfico?" 
+		"¿Instalar el Suite de Oracle KVM?"
+		"Más Sofware!!"
+		"Este script tiene un pequeño pack de software, ¿Te gusta?"
+		"LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, repórtalo a 036raspberry"
+		"Por favor reiniciar tu servidor para hacer los cambios"
+	)
+
+	if [ "$LANGUAGE" -eq 1 ]; then
+		echo "${DICTIONARY_ENG[$POSITION]}"
+	else 
+		echo "${DICTIONARY_ESP[$POSITION]}"
+	fi
+
+}
+
+function commandverify() {
+	if ! command -v "$1" &> /dev/null; then return 1; else return 0; fi
+}
+
+function language {
+		
+	echo "Bienvenido / Welcome"
+	echo "Please, choose your language / Por favor selecciona tu idioma"
+	echo "1) English"; echo "2) Espanol"
+	read -n 1 -r OPTION
+	case $OPTION in
+		1) LANGUAGE=1;;
+		2) LANGUAGE=2;;
+		*) exit 1;;
+	esac
+}
+
+function cover {
+	
+	clear
+	echo '                                     `"~>v??*^;rikD&MNBQku*;`                                           '
+	echo '                                `!{wQNWWWWWWWWWWWWWWWNWWWWWWNdi^`                                       '
+	echo '                              .v9NWWWWNRFmWWWWWWWWWWWWga?vs0pNWWWMw!                                    '
+	echo '                            !9WWWWWWU>`>&WWWWWWUH!_JNWWWWWQz  ^EWWWWg|                                  '
+	echo '                           _SWWWWWNe: /RWWWWWWNNHBRuyix&WWWWWg2?-"VNWWW6_                               '
+	echo '                         "kWWWWWNz. .zNWWWWWWw=, ^NsLQNW**MWWWW&WQJuNWWWNr.                             '
+	echo '                       .FNWWWWNu. rL&WWWWWWg!!*;^Jo!*BN0aFx)>|!;;;;;!~\r)xFwaao?|,                      '
+	echo '                     .sNWWWWMi` -,#WWWWWWNi"` Siwu UWv  .;^|^;`               .!*lUSF*;                 '
+	echo '                    )BWWWWWo.   9NWWWWWW0; ;PvLc*aU&^ |L=-``.;>*=                   ;)wmkL_             '
+	echo '                  _QWWWWWq"   .aWWWWWWWs`  rF<>\^gQ, /i   ,;;.  !2                      ,*k0F\`         '
+	echo '                 *NWWWWNv   ,/&WWWWWWNr "!SL92l)BU.  ^x   x. L,  I_                        `>P&F;       '
+	echo '               `2WWWWWg;    !BWWWWWWD"   .s;!\xNa     /L,   !L`  P,                           .?&gr     '
+	echo '              ,QWWWWWS`  >;LWWWWWWWk`_;!\u|  ^Ml        ;~!^,  `iv                              `?Ng^   '
+	echo '             ^BWWWWWi   *i7NWWWWWWc "a;;?ii"~NV             `;?},                                 ,9WF  '
+	echo '            >WWWWWB!  ` ;8WWWWWWM=  r>`;F/2wNc          .;||!,                                      oW#.'
+	echo '           ?WWWWW#"  `2;7NWWWWW&_ =_=u%ir`>Wi                                                        PW6'
+	echo '          rWWWWWc   `||>WWWWWWU.  r^?7;!v*W)                                                         ,WW|'
+	echo '         ^NWWWB!  ! \jrmWWWWWw  `vL.k*\vkW$>rr*r;`        ;rL{7)>!`                                   mWF'
+	echo '        .BWWW$,   ,u. PWWWWW) ,r`)|)!__LWv     `;L"     |s>:```._|JuL                                 qWE'
+	echo '        uWWWH` .vi"Fo*WWWWN>   ^v  r*`>W}                                                             &Ws '
+	echo '       ;WWWP`  `=*ox_pWWWB; ^)i`9xr,#7W*            .     ,\*`                                       |WW! '
+	echo '       SWWD` >LLr^_y*NWWQ"  ,<?P~|iF0W}            ~;   v_ `o;                                      .0WU'
+	echo '      ^WW0,.!F2xULFi5WW0` >7vr!!z_`*Wv             `|;;^!,~!`                                      .8W8.'
+	echo '      dWN;`>JyrkIr`!NWN! ,uFia!9?*2WI                                                             ;QWD.'
+	echo '     =WW7`_S)~Fxv| xWWi ;}drqa=;=uWRNmL,                                                         rWWt`  '
+	echo '     DWP`;LiL;}c*rsWW&`,Po_e7L/ =Nc `>oD$aaw%ouic7)*r>=|^^~!;;;;;;;;;;;;;~^\>rvL{JctxiiiiuusoF2kgBS/  '
+	echo '    ;WN\\Uy>*rF.,pWWWr-;?J"vov^^Nu         `.,"_;!~^\=>r*v?LL{}Jjjjjjj}}7?vr>\^!;____-""",,,..``    '
+	echo '    iW?_**>^;>"~&EeWg=|liv*s!~?NL'
+	echo '    wWc*$>*~~L6Ni QW! \Uursx >WJ'
+	echo '    2M)o*_F "R0; .Wd~U7,``;*iN>'
+	echo '    xWe?vI7cMu`  ,W&>xssr~=PB|'
+	echo '    "W% ,cBZ_    `M2l\/i,,QQ,'
+	echo '     |U$di_       UBu>i)yBy`'
+	echo '                  ^Wx,rDR!'
+	echo '                   \ZUl^'
+	echo '.oPYo. .oPYo. .pPYo.   .oPYo.                       o   o                 .oPYo.   o              8  o                '
+	echo '8  .o8     `8 8        8    8                       8                     8        8              8                   '
+	echo '8 .P`8   .oP` 8oPYo.   8      oPYo. .oPYo. .oPYo.  o8P o8 o    o .oPYo.   `Yooo.  o8P o    o .oPYo8 o8 .oPYo. .oPYo.  '
+	echo '8.d` 8    `b. 8`  `8   8      8  `` 8oooo8 .oooo8   8   8 Y.  .P 8oooo8       `8   8  8    8 8    8  8 8    8 Yb..   '
+	echo '8o`  8     :8 8.  .P   8    8 8     8.     8    8   8   8 `b..d` 8.            8   8  8    8 8    8  8 8    8   `Yb. '
+	echo '`YooP` `YooP` `YooP`   `YooP` 8     `Yooo` `YooP8   8   8  `YP`  `Yooo`   `YooP`   8  `YooP` `YooP`  8 `YooP` `YooP. '
+	echo ':.....::.....::.....::::.....:..:::::.....::.....:::..::..::...:::.....::::.....:::..::.....::.....::..:.....::.....:'
+	echo ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
+	echo ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
+}
+
+function verify {
+
+    ARCH=$(uname -m); OPERATING=$(uname -o)
+	ORACLE=$(cat /etc/os-release | head -n 1 | cut -d "=" -f2)
+	PI="$(cat /sys/firmware/devicetree/base/model)"
+	SELECTOR=""
+
+	if [ "$OPERATING" != "GNU/Linux" ]; then
+		clear; printer error 0; exit 1
+	fi
+
+    if [[ "$ORACLE" =~ \"Oracle.* ]]; then
+		echo "ready" &> /dev/null
+	else
+		clear; printer error 1; exit 1
+    fi
+	
+    if [ "$ARCH" != "aarch64" ]; then
+		clear; printer error 2; exit 1
+    fi
+
+	if [[ "$PI" =~ ^Raspberry[[:space:]]Pi[[:space:]]4.* ]]; then
+        echo "ready" &> /dev/null
+	else
+		clear; printer error 3; exit 1
+    fi
+
+    SELECTOR="dnf"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 1 ]; then
+		clear; printer error 4; exit 1
+	fi
+
+    PING=$(ping -c 1 8.8.8.8 2>&1) 
+
+    if [[ "$PING" =~ unreachable* ]]; then
+		clear; printer error 5; exit 1
+	fi
+
+    printer print 6; dnf update --assumeyes &> /dev/null
+
+	SELECTOR="dialog"; commandverify "$SELECTOR"; local res=$?
+
+	if [ $res -eq 1 ]; then
+		printer print 7
+		dnf install dialog --assumeyes &> /dev/null
+	fi
+
+	printer print 8; START=$(date +%s); CHARS="/-\|"
+
+	while [[ $(($(date +%s) - START)) -lt 2 ]]; do
+		for (( i=0; i<${#CHARS}; i++ )); do
+			sleep 0.08; echo -en "${CHARS:$i:1}" "\r"
+		done
+	done
+
+}
+
+function packages {
+
+	RES1=$(reader 0); clear; printer print 9
+
+	dnf install rsync sudo nano git net-tools wget nano e2fsprogs \
+		cockpit glibc-all-langpacks glibc-langpack-es -y
+
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+
+}
+
+function hostnamer {
+
+	RES2=$(reader 1); RES3=$(reader 2)
+
+	clear
+	dialog --title "Hostname" \
+    --backtitle "$RES2" \
+    --inputbox "$RES3" 8 80 2>"$HOSTTEMP"
+
+    RESPONSE=$?
+    DATA=$(<$HOSTTEMP)
+
+    case $RESPONSE in
+    0) 
+		hostnamectl set-hostname "${DATA}" 
+		return;;
+    1) 
+        clear; exit 0  
+        return;;
+    255) 
+        clear; exit 0
+        return;;
+    esac
+	
+}
+
+function localer {
+
+	RES4=$(reader 3); RES5=$(reader 4); clear
+	dialog --msgbox "$RES4" 9 50
+
+	timedatectl set-timezone America/Guayaquil
+
+	dialog --clear --backtitle "036 Creative Studios" \
+		--title "Locale" \
+		--menu "$RES5" 12 50 4 \
+		Spanish "es" \
+		English "us" 2>"${LOCALESTEMP}"
+
+	menuitem=$(<"${LOCALESTEMP}")
+
+	case $menuitem in
+		Spanish) 
+			clear
+			localectl set-keymap es
+			localectl set-locale LANG=es_ES.UTF-8
+			return;;
+		English) 
+			clear
+			localectl set-keymap us
+			localectl set-locale LANG=en_US.UTF-8
+			return;;
+		*) clear; exit 0;;
+	esac
+}
+
+function cockpit {
+
+	clear; printer print 10; RES1=$(reader 0)
+	systemctl enable --now cockpit.socket
+	systemctl start cockpit.socket
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+
+}
+
+function newuser {
+
+	RES1=$(reader 0); RES5=$(reader 4)
+	clear; printer print 11
+	read -r -p "$RES5" SUDOUSER
+	adduser "$SUDOUSER"; passwd "$SUDOUSER"
+	usermod -aG wheel "$SUDOUSER"
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+
+}
+
+function graphical {
+
+	RES1=$(reader 0); RES6=$(reader 5); RES7=$(reader 6)
+
+	dialog --title "$RES6" --backtitle "036 Creative Studios" \
+		--yesno "$RES7" 7 60
+
+	response=$?
+	
+	if [ $response = 0 ]; then
+		XRDPTOGGLE=1
+		clear
+		echo -e "=============== EPEL & XFCE =============== \n" 
+		dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm --assumeyes 
+		dnf update --assumeyes 
+		dnf groupinstall "base-x" --assumeyes 
+		dnf groupinstall "xfce" --assumeyes
+		dnf install xfce4-whiskermenu-plugin --assumeyes 
+		touch .xinitrc
+		echo "xfce4-session" > .xinitrc
+		touch /home/"$SUDOUSER"/.xinitrc
+		echo "xfce4-session" > /home/"$SUDOUSER"/.xinitrc
+		chown "$SUDOUSER" /home/"$SUDOUSER"/.xinitrc
+		echo " "
+		echo -e "=============== OK =============== \n" 
+		read -r -p "$RES1"
+	else
+		clear
+		echo -e "=============== EPEL =============== \n" 
+		dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm --assumeyes 
+		echo " "
+		echo -e "=============== OK =============== \n" 
+		read -r -p "$RES1"
+		return
+	fi
+
+}
+
+function remote {
+
+	clear; RES1=$(reader 0)
+
+	if [ $XRDPTOGGLE -eq 1 ]; then
+
+		echo -e "=============== XRDP ===============  \n" 
+
+		dnf install xrdp --assumeyes 
+		touch /home/"$SUDOUSER"/.Xclients
+		echo "xfce4-session" > /home/"$SUDOUSER"/.Xclients
+		chmod a+x /home/"$SUDOUSER"/.Xclients
+		chown "$SUDOUSER" /home/"$SUDOUSER"/.Xclients
+		systemctl enable xrdp
+		systemctl enable xrdp-sesman
+		systemctl start xrdp
+		systemctl start xrdp-sesman
+		firewall-cmd --permanent --add-port=3389/tcp 
+		firewall-cmd --reload
+		chcon --type=bin_t /usr/sbin/xrdp
+		chcon --type=bin_t /usr/sbin/xrdp-sesman
+
+		echo " "
+		echo -e "=============== OK =============== \n" 
+		read -r -p "$RES1"
+	
+	fi
+
+}
+
+function kvm {
+
+	RES1=$(reader 0); RES8=$(reader 7)
+
+	dialog --title "KVM" --backtitle "036 Creative Studios" \
+		--yesno "$RES8" 8 60
+	response=$?
+	if [ $response = 0 ]; then
+		clear
+		echo -e "=============== KVM ===============  \n" 
+		dnf module install virt -y
+		dnf install virt-install virt-viewer virt-manager cockpit-machines -y
+		virt-host-validate qemu
+		systemctl enable libvirtd
+		systemctl start libvirtd
+		echo " "
+		echo -e "=============== OK =============== \n" 
+		read -r -p "$RES1"
+
+	elif [ $response -eq 1 ]; then
+		clear; return
+	else
+		clear; return
+	fi
+
+}
+
+function ohmyzsh {
+
+	clear
+	echo -e "=============== OMZ =============== \n" 
+	touch /home/"$SUDOUSER"/omz.sh
+	echo '#!/bin/bash' > /home/"$SUDOUSER"/omz.sh
+	echo 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sudo ln -s "$HOME"/.zshrc /root/.zshrc' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sudo ln -s "$HOME"/.oh-my-zsh /root/.oh-my-zsh' >> /home/"$SUDOUSER"/omz.sh
+	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /home/"$SUDOUSER"/omz.sh
+	echo 'git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sed -i -e "s/plugins=(.*/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
+	chown "$SUDOUSER" /home/"$SUDOUSER"/omz.sh
+
+	echo '#!/bin/bash' > /root/omz.sh
+	echo 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"' >> /root/omz.sh
+	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /root/omz.sh
+	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /root/omz.sh
+	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /root/omz.sh
+	echo 'git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions' >> /root/omz.sh
+	echo 'sed -i -e "s/plugins=(.*/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/" .zshrc' >> /root/omz.sh
+	chmod +x /root/omz.sh
+
+	printer print 12
+
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+
+}
+
+function software {
+
+	RES1=$(reader 0); RES9=$(reader 8); RES10=$(reader 9)
+
+	dialog --title "$RES9" --backtitle "036 Creative Studios" \
+		--yesno "$RES10 \
+			-> baobab \n \
+			-> ntfs-3g \n \
+			-> nautilus \n \
+			-> gedit \n \
+			-> tar \n \
+			-> yum-utils \n \
+			-> numix-gtk-theme \n \
+			-> numix-icon-theme \n \
+			-> numix-icon-theme-circle" 20 65
+
+	response=$?; clear
+
+	if [ $response = 0 ]; then
+	
+		clear
+		echo -e "=============== SOFTWARE =============== \n" 
+		dnf install baobab ntfs-3g exfatprogs nautilus gedit tar yum-utils --assumeyes
+		dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm --assumeyes
+		dnf install numix-gtk-theme --assumeyes
+		dnf install gnome-icon-theme --assumeyes
+		dnf install numix-icon-theme --assumeyes
+		dnf install numix-icon-theme-circle --assumeyes
+		dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm --assumeyes
+		echo " "
+		echo -e "$RES1" 
+		read -r -p "Press Enter to continue..."
+
+	else
+		clear
+		return
+	fi
+
+}
+
+function finisher {
+
+	clear; RES11=$(reader 10)
+	dialog --msgbox "$RES11" 7 50
+	clear; printer print 12
+	exit 0
+
+}
+
+core
+
+[ -f $LOCALESTEMP ] && rm $LOCALESTEMP
+[ -f $HOSTTEMP ] && rm $HOSTTEMP
