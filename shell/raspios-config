@@ -267,7 +267,7 @@ function packages {
 
 	clear; RES1=$(reader 0); RES2=$(reader 1)
 	sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin yes/' \
-	/etc/ssh/sshd_config &> /dev/null
+		/etc/ssh/sshd_config &> /dev/null
 	printer print 12; apt upgrade -y
 	echo " "
 	echo -e "=============== OK =============== \n" 
@@ -282,7 +282,8 @@ function packages {
 		screen unrar p7zip vim network-manager-gnome zsh python3-pip libgles1 libopengl0 libxvmc1 libgpiod-dev python3-libgpiod
 
 	systemctl enable NetworkManager.service
-	echo "Set managed=true" >> /etc/NetworkManager/NetworkManager.conf
+	sed -i '/managed=false/d' /etc/NetworkManager/NetworkManager.conf &> /dev/null
+	echo "managed=true" >> /etc/NetworkManager/NetworkManager.conf
 	systemctl disable dhcpcd.service
 	echo " "
 	echo -e "=============== OK =============== \n" 
@@ -330,7 +331,7 @@ function ohmyzsh {
 	echo -e "=============== OMZ =============== \n" 
 	touch /home/"$SUDOUSER"/omz.sh
 	echo '#!/bin/bash' > /home/"$SUDOUSER"/omz.sh
-	echo 'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /home/"$SUDOUSER"/omz.sh
 	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /home/"$SUDOUSER"/omz.sh
@@ -338,7 +339,6 @@ function ohmyzsh {
 	echo 'sed -i -e "s/plugins=(.*/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
 	chown "$SUDOUSER" /home/"$SUDOUSER"/omz.sh
 	chmod +x /home/"$SUDOUSER"/omz.sh
-
 	echo '#!/bin/bash' > /root/omz.sh
 	echo 'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"' >> /root/omz.sh
 	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /root/omz.sh
@@ -358,10 +358,9 @@ function ohmyzsh {
 
 function software {
 
-	RES1=$(reader 0); RES4=$(reader 3); RES5=$(reader 4)
+	systemctl mask lvm2-monitor
 
-	echo "disable_overscan=1" >> /boot/config.txt
-	echo "hdmi_drive=2" >> /boot/config.txt
+	RES1=$(reader 0); RES4=$(reader 3); RES5=$(reader 4)
 
 	dialog --title "$RES4" --backtitle "036 Creative Studios" \
 		--yesno "$RES5 \

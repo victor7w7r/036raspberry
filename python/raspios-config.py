@@ -233,8 +233,9 @@ def packages() -> None:
     system("apt install -y cockpit git net-tools wget vim rsync neofetch \
 		screen unrar p7zip vim network-manager-gnome zsh python3-pip libgles1 libopengl0 libxvmc1 libgpiod-dev python3-libgpiod")
     system("systemctl enable NetworkManager.service")
+    system("sed -i '/managed=false/d' /etc/NetworkManager/NetworkManager.conf &> /dev/null")
     with open('/etc/NetworkManager/NetworkManager.conf', 'a') as f:
-        f.write("\nSet managed=true")
+        f.write("\nmanaged=true")
     system("systemctl disable dhcpcd.service")
     print(" ")
     print("=============== OK =============== \n")
@@ -286,7 +287,7 @@ def ohmyzsh() -> None:
     with open(f'/home/{SUDOUSER}/omz.sh', 'w') as f: 
         f.writelines([
             "#!/bin/bash\n",
-            'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"\n',
+            'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"\n',
             'sed -i -e \'s/ZSH_THEME=.*/ZSH_THEME=\\\"pmcgee\\\"/\' .zshrc\n',
             "sed -i -e '/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true' .zshrc\n",
             r"git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting",
@@ -301,7 +302,7 @@ def ohmyzsh() -> None:
     with open('/root/omz.sh', 'w') as f: 
         f.writelines([
             "#!/bin/bash\n",
-            'sh -c "$(wget https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"\n',
+            'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"\n',
             'sed -i -e \'s/ZSH_THEME=.*/ZSH_THEME=\\\"pmcgee\\\"/\' .zshrc\n',
             "sed -i -e '/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true' .zshrc\n",
             r"git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting",
@@ -320,12 +321,6 @@ def ohmyzsh() -> None:
 def software() -> None:
     
     system("systemctl mask lvm2-monitor")
-    
-    with open('/boot/config.txt', 'a') as f: 
-        f.writelines([
-            "\ndisable_overscan=1\n",
-            'hdmi_drive=2',
-        ])  
         
     if d.yesno(reader(4)+"""\n -> Pi-Apps \n -> baobab \n -> ntfs-3g \n -> exfat-utils \n -> xrdp \n -> xarchiver \n -> synaptic \n -> neofetch \n -> vlc \n -> gdebi \n -> numix-gtk-theme-git \n -> numix-icon-theme
             """ ,20,65) == d.OK:
