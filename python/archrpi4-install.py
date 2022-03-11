@@ -1,6 +1,6 @@
 from subprocess import call, PIPE, Popen
 from sys import stdin, stdout, platform, version_info
-from os import system
+from os import system, getuid
 from urllib.request import urlopen
 from termios import tcgetattr, tcsetattr, TCSADRAIN
 from time import sleep
@@ -77,8 +77,9 @@ def reader(position: int) -> str:
 
     DICTIONARY_ESP=(
         "ATENCIÓN!!! Tu tarjeta SD debe ser mostrado como un dispositivo USB, verifica que tu SD está vacía y lista para formatear",
-		"Tarjeta SD",
+		"Formatear un dispositivo",
 		"Elige un dispositivo para formatear",
+        "ZONA DE PELIGRO!!",
 		"Este dispositivo se va a formatear ¿Continuar? \n",
 		"Presione Enter para continuar...",
 		"En la carpeta home de root está disponible el script de configuración, si lo deseas",
@@ -104,6 +105,7 @@ def language() -> None:
     else: exit(1)
 
 def cover() -> None:
+    
     utils.clear()
     print(r'''                                     `"~>v??*^;rikD&MNBQku*;`                                           ''')
     print(r'''                                `!{wQNWWWWWWWWWWWWWWWNWWWWWWNdi^`                                       ''')
@@ -151,15 +153,19 @@ def cover() -> None:
     print(r''':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::''')
 
 def usbverify() -> None:
-    VERIFYUSB: str = Popen(r"""find /dev/disk/by-id/ -name 'usb*' | sort -n | sed 's/^\/dev\/disk\/by-id\///
+    
+    VERIFYUSB: str = Popen(r"""find /dev/disk/by-id/ -name 'usb*' | sort -n | sed 's/^\/dev\/disk\/by-id\///'
                     """, shell=True, stdout=PIPE).stdout.read().decode('utf-8').replace("\n", "")
     if(VERIFYUSB == ""): utils.clear(); printer("error",10); exit(1)
 
 def verify() -> None:
+    
     if version_info < (3, 5):
         utils.clear(); printer("error",11); exit(1)
     if platform != "linux":
         utils.clear(); printer("error",0); exit(1)
+    if getuid() != 0:
+        utils.clear(); printer("error",12); exit(1)
     try: urlopen('http://google.com')
     except: utils.clear(); printer("error",1); exit(1)
     if not commandverify("dialog"):
@@ -213,49 +219,54 @@ def diskmenu() -> None:
             cat /sys/class/block/{BLOCKSTAT}/device/model''',
             shell=True, stdout=PIPE).stdout.read().decode('utf-8').rstrip()
         SIZE: str = Popen(f"lsblk -no SIZE /dev/{PART} | head -1 | sed s/..//", 
-                        shell=True, stdout=PIPE).stdout.read().decode('utf-8').rstrip()
+                    shell=True, stdout=PIPE).stdout.read().decode('utf-8').rstrip()
         ARGSUSB.append([DEVICE, MODEL+ " " +SIZE]); COUNT += 1
         response = d.menu(reader(2), 15, 50, 4, ARGSUSB) 
         if(response[0] == "ok"): diskformat(response[1])
         
 def diskformat(disk: str) -> None:
-    if disk != "": utils.clear(); exit(0)
+    
+    if disk == "": utils.clear(); exit(0)
     if d.yesno(reader(4),7,60) == d.OK:
+        utils.clear()
         printer("print",7)
-        utils.live_tasker(f"parted --script {disk} mklabel msdos mkpart primary fat32 1MiB 200MiB set 1 boot on mkpart primary ext4 200MiB 100% print")
+        system(f"umount -f {disk}?* &> /dev/null")
+        system(f"parted --script {disk} mklabel msdos mkpart primary fat32 1MiB 200MiB set 1 boot on mkpart primary ext4 200MiB 100% print")
         print(" ")
         print("=============== OK =============== \n")
         input(reader(5)); utils.clear()
         
         printer("print",8)
-        utils.live_tasker(f"mkfs.ext4 {disk}2")
-        utils.live_tasker(f"mkfs.fat -F32 {disk}1")
-        call("mkdir /mnt/boot",shell=True); call("mkdir /mnt/root",shell=True)
-        call(f"mount {disk}2 /mnt/root",shell=True); call(f"mount {disk}1 /mnt/boot",shell=True)
+        system(f"mkfs.ext4 {disk}2")
+        system(f"mkfs.fat -F32 {disk}1")
+        system("mkdir /mnt/boot"); system("mkdir /mnt/root")
+        system(f"mount {disk}2 /mnt/root"); system(f"mount {disk}1 /mnt/boot")
         print(" ")
         print("=============== OK =============== \n")
         input(reader(5)); utils.clear(); baseinstall()
     else: utils.clear(); exit(1)
     
 def baseinstall() -> None:
-    printer("print",8)
-    utils.live_tasker("wget http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz -P /mnt/root/")
-    call("bsdtar -xpf /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz -C /mnt/root/")
-    call("sync"); call("rm /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz")
-    call("mv /mnt/root/boot/* /mnt/boot/")
-    call("sed -i 's/mmcblk0/mmcblk1/g' /mnt/root/etc/fstab")
-    call("sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin Yes/' /mnt/root/etc/ssh/sshd_config &> /dev/null")
-    utils.live_tasker("wget https://raw.githubusercontent.com/victor7w7r/036raspberry/master/archrpi4-config -P /mnt/root/root/")
-    call("chmod +x /mnt/root/root/archrpi4-config"); call("umount /mnt/boot"); call("umount /mnt/root")
-    call("rm -rf /mnt/boot"); call("rm -rf /mnt/root")
+    
+    printer("print",9)
+    system("wget http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz -P /mnt/root/")
+    system("bsdtar -xpf /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz -C /mnt/root/")
+    system("sync"); system("rm /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz")
+    system("mv /mnt/root/boot/* /mnt/boot/")
+    system("sed -i 's/mmcblk0/mmcblk1/g' /mnt/root/etc/fstab")
+    system("sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin yes/' /mnt/root/etc/ssh/sshd_config &> /dev/null")
+    system("wget https://raw.githubusercontent.com/victor7w7r/036raspberry/master/python/archrpi4-config.py -P /mnt/root/root/")
+    system("umount /mnt/boot"); system("umount /mnt/root")
+    system("rm -rf /mnt/boot"); system("rm -rf /mnt/root")
     
     print(" ")
     print("=============== OK =============== \n")
     input(reader(5)); utils.clear(); finisher()
     
 def finisher() -> None:
+    
     utils.clear(); d.msgbox(reader(6),8,50)
-    d.msgbox(reader(6),10,50)
+    d.msgbox(reader(7),10,50)
     utils.clear(); exit(0)
     
 class utils:
@@ -271,16 +282,6 @@ class utils:
         finally:
             tcsetattr(fd, TCSADRAIN, oldSettings)
         return answer
-    
-    def live_tasker(cmd: str) -> int:
-        task = Popen(cmd, stdout=PIPE, stderr=PIPE, encoding='utf8', shell=True)
-        try:  
-            while task.poll() is None:
-                for line in task.stdout:
-                    task.stdout.flush()
-                    print(line.replace("\n", ""))
-            return task.poll()
-        except: return 1
     
     def spinning():
         while True:

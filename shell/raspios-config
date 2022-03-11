@@ -8,15 +8,13 @@ fi
 rm /tmp/localestemp.sh* 2> /dev/null
 rm /tmp/hosttemp.sh* 2> /dev/null
 rm /tmp/graphicaltemp.sh* 2> /dev/null
-	
 LOCALESTEMP=/tmp/localestemp.sh.$$
 HOSTTEMP=/tmp/hosttemp.sh.$$
 GRAPHICALTEMP=/tmp/graphicaltemp.sh.$$
 
-SUDOUSER=""
+SUDOUSER=""; LANGUAGE=0
 
 function cleanup { rm $LOCALESTEMP; $HOSTTEMP; $GRAPHICALTEMP exit; }
-
 trap cleanup; SIGHUP SIGINT SIGTERM
 
 function core { clear; language; cover; sleep 1s; verify; packages
@@ -94,10 +92,12 @@ function printer() {
 
 function reader() {
 
+	POSITION="${1}"
+
 	local DICTIONARY_ENG=(
 		"Press Enter to continue..."
 		"The raspi-config app will be open, please change your configurations"
-		"Escribe tu nuevo usuario: "
+		"Write your new user: "
 		"More Sofware!!"
 		"This script has a little pack of software, Do you like it?\n"
 		"READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub"
@@ -106,7 +106,7 @@ function reader() {
 	local DICTIONARY_ESP=(
 		"Presione Enter para continuar..."
 		"La aplicación de raspi-config se va a abrir, por favor cambia las configuraciones pertinentes" 
-		"Write your new user: "
+		"Escribe tu nuevo usuario: "
 		"Más Sofware!!"
 		"Este script tiene un pequeño pack de software, ¿Te gusta?\n"
 		"LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, repórtalo a 036raspberry"
@@ -131,13 +131,61 @@ function language {
 	echo "1) English"; echo "2) Espanol"
 	read -n 1 -r OPTION
 	case $OPTION in
-		1) LANGUAGE=1;;
-		2) LANGUAGE=2;;
-		*) exit 1;;
+		1) LANGUAGE=1;; 2) LANGUAGE=2;; *) exit 1;;
 	esac
 }
 
+function cover {
+	
+	clear
+	echo '                                     `"~>v??*^;rikD&MNBQku*;`                                           '
+	echo '                                `!{wQNWWWWWWWWWWWWWWWNWWWWWWNdi^`                                       '
+	echo '                              .v9NWWWWNRFmWWWWWWWWWWWWga?vs0pNWWWMw!                                    '
+	echo '                            !9WWWWWWU>`>&WWWWWWUH!_JNWWWWWQz  ^EWWWWg|                                  '
+	echo '                           _SWWWWWNe: /RWWWWWWNNHBRuyix&WWWWWg2?-"VNWWW6_                               '
+	echo '                         "kWWWWWNz. .zNWWWWWWw=, ^NsLQNW**MWWWW&WQJuNWWWNr.                             '
+	echo '                       .FNWWWWNu. rL&WWWWWWg!!*;^Jo!*BN0aFx)>|!;;;;;!~\r)xFwaao?|,                      '
+	echo '                     .sNWWWWMi` -,#WWWWWWNi"` Siwu UWv  .;^|^;`               .!*lUSF*;                 '
+	echo '                    )BWWWWWo.   9NWWWWWW0; ;PvLc*aU&^ |L=-``.;>*=                   ;)wmkL_             '
+	echo '                  _QWWWWWq"   .aWWWWWWWs`  rF<>\^gQ, /i   ,;;.  !2                      ,*k0F\`         '
+	echo '                 *NWWWWNv   ,/&WWWWWWNr "!SL92l)BU.  ^x   x. L,  I_                        `>P&F;       '
+	echo '               `2WWWWWg;    !BWWWWWWD"   .s;!\xNa     /L,   !L`  P,                           .?&gr     '
+	echo '              ,QWWWWWS`  >;LWWWWWWWk`_;!\u|  ^Ml        ;~!^,  `iv                              `?Ng^   '
+	echo '             ^BWWWWWi   *i7NWWWWWWc "a;;?ii"~NV             `;?},                                 ,9WF  '
+	echo '            >WWWWWB!  ` ;8WWWWWWM=  r>`;F/2wNc          .;||!,                                      oW#.'
+	echo '           ?WWWWW#"  `2;7NWWWWW&_ =_=u%ir`>Wi                                                        PW6'
+	echo '          rWWWWWc   `||>WWWWWWU.  r^?7;!v*W)                                                         ,WW|'
+	echo '         ^NWWWB!  ! \jrmWWWWWw  `vL.k*\vkW$>rr*r;`        ;rL{7)>!`                                   mWF'
+	echo '        .BWWW$,   ,u. PWWWWW) ,r`)|)!__LWv     `;L"     |s>:```._|JuL                                 qWE'
+	echo '        uWWWH` .vi"Fo*WWWWN>   ^v  r*`>W}                                                             &Ws '
+	echo '       ;WWWP`  `=*ox_pWWWB; ^)i`9xr,#7W*            .     ,\*`                                       |WW! '
+	echo '       SWWD` >LLr^_y*NWWQ"  ,<?P~|iF0W}            ~;   v_ `o;                                      .0WU'
+	echo '      ^WW0,.!F2xULFi5WW0` >7vr!!z_`*Wv             `|;;^!,~!`                                      .8W8.'
+	echo '      dWN;`>JyrkIr`!NWN! ,uFia!9?*2WI                                                             ;QWD.'
+	echo '     =WW7`_S)~Fxv| xWWi ;}drqa=;=uWRNmL,                                                         rWWt`  '
+	echo '     DWP`;LiL;}c*rsWW&`,Po_e7L/ =Nc `>oD$aaw%ouic7)*r>=|^^~!;;;;;;;;;;;;;~^\>rvL{JctxiiiiuusoF2kgBS/  '
+	echo '    ;WN\\Uy>*rF.,pWWWr-;?J"vov^^Nu         `.,"_;!~^\=>r*v?LL{}Jjjjjjj}}7?vr>\^!;____-""",,,..``    '
+	echo '    iW?_**>^;>"~&EeWg=|liv*s!~?NL'
+	echo '    wWc*$>*~~L6Ni QW! \Uursx >WJ'
+	echo '    2M)o*_F "R0; .Wd~U7,``;*iN>'
+	echo '    xWe?vI7cMu`  ,W&>xssr~=PB|'
+	echo '    "W% ,cBZ_    `M2l\/i,,QQ,'
+	echo '     |U$di_       UBu>i)yBy`'
+	echo '                  ^Wx,rDR!'
+	echo '                   \ZUl^'
+	echo '.oPYo. .oPYo. .pPYo.   .oPYo.                       o   o                 .oPYo.   o              8  o                '
+	echo '8  .o8     `8 8        8    8                       8                     8        8              8                   '
+	echo '8 .P`8   .oP` 8oPYo.   8      oPYo. .oPYo. .oPYo.  o8P o8 o    o .oPYo.   `Yooo.  o8P o    o .oPYo8 o8 .oPYo. .oPYo.  '
+	echo '8.d` 8    `b. 8`  `8   8      8  `` 8oooo8 .oooo8   8   8 Y.  .P 8oooo8       `8   8  8    8 8    8  8 8    8 Yb..   '
+	echo '8o`  8     :8 8.  .P   8    8 8     8.     8    8   8   8 `b..d` 8.            8   8  8    8 8    8  8 8    8   `Yb. '
+	echo '`YooP` `YooP` `YooP`   `YooP` 8     `Yooo` `YooP8   8   8  `YP`  `Yooo`   `YooP`   8  `YooP` `YooP`  8 `YooP` `YooP. '
+	echo ':.....::.....::.....::::.....:..:::::.....::.....:::..::..::...:::.....::::.....:::..::.....::.....::..:.....::.....:'
+	echo ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
+	echo ':::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
+}
+
 function verify {
+
     ARCH=$(uname -m)
     OPERATING=$(uname -o)
 	SELECTOR=""
@@ -186,7 +234,7 @@ function verify {
     SELECTOR="lsb_release"; commandverify "$SELECTOR"; local res=$?
 
 	if [ $res -eq 1 ]; then
-		printer error 8
+		printer print 8
 		apt install -y lsb-release -&> /dev/null
 	fi
 
@@ -199,7 +247,7 @@ function verify {
 	SELECTOR="dialog"; commandverify "$SELECTOR"; local res=$?
 
 	if [ $res -eq 1 ]; then
-		clear; printer error 10; exit 1
+		printer print 10
 		apt install -y dialog &> /dev/null
 	fi
 
@@ -216,45 +264,26 @@ function verify {
 }
 
 function packages {
+
 	clear; RES1=$(reader 0); RES2=$(reader 1)
-
-	sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin Yes/' \
+	sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin yes/' \
 	/etc/ssh/sshd_config &> /dev/null
-
 	printer print 12; apt upgrade -y
-		
+	echo " "
 	echo -e "=============== OK =============== \n" 
 	read -r -p "$RES1"
-
 	clear; printer print 13; passwd
-
 	echo " "
 	echo -e "=============== OK =============== \n" 
 	read -r -p "$RES1"
-	
-	clear printer print 14
-
-	mv /etc/apt/sources.list /etc/apt/sources.list.old
-	mv /etc/apt/sources.list.d /etc/apt/sources.list.d.old
-
-	echo "deb http://deb.debian.org/debian sid main contrib non-free" > /etc/apt/sources.list
-	echo "deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sources.list
-
-	apt update; apt dist-upgrade -y
-
-	echo " "
-	echo -e "=============== OK =============== \n" 
-	read -r -p "$RES1"
-
 	clear; printer print 15
 
 	apt install -y cockpit git net-tools wget vim rsync neofetch \
-		screen unrar p7zip vim network-manager-gnome zsh
+		screen unrar p7zip vim network-manager-gnome zsh python3-pip libgles1 libopengl0 libxvmc1 libgpiod-dev python3-libgpiod
 
 	systemctl enable NetworkManager.service
 	echo "Set managed=true" >> /etc/NetworkManager/NetworkManager.conf
 	systemctl disable dhcpcd.service
-
 	echo " "
 	echo -e "=============== OK =============== \n" 
 	read -r -p "$RES1"
@@ -267,34 +296,27 @@ function newuser {
 
 	clear; printer print 16
 	RES1=$(reader 0); RES3=$(reader 2)
-	
 	read -r -p "$RES3" SUDOUSER
 	adduser "$SUDOUSER"
-	usermod -aG sudo victor7w7r
-
+	usermod -aG sudo "$SUDOUSER"
 	echo " "
-	echo -e "$RES1" 
-	read -r -p "Press Enter to continue..."
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
 }
 
 function graphical {
 
 	clear; RES1=$(reader 0)
 	echo -e "=============== XFCE =============== \n" 
-	
 	apt install -y xserver-xorg xfce4 xfce4-goodies xfce4-indicator-plugin \
-		blueman ttf-ubuntu-font-family firefox nemo cinnamon-l10n gdm3
-
+		blueman ttf-ubuntu-font-family nemo cinnamon-l10n gdm3
 	touch /root/.xinitrc
 	echo 'export XAUTHORITY=${HOME}/.Xauthority' > /root/.xinitrc
 	echo 'xfce4-session' >> /root/.xinitrc	
-
 	touch /home/"$SUDOUSER"/.xinitrc
 	echo 'export XAUTHORITY=${HOME}/.Xauthority' > /home/"$SUDOUSER"/.xinitrc
 	echo 'xfce4-session' >>  /home/"$SUDOUSER"/.xinitrc
-
 	chown "$SUDOUSER" /home/"$SUDOUSER"/.xinitrc
-
 	echo " "
 	echo -e "=============== OK =============== \n" 
 	read -r -p "$RES1"
@@ -304,21 +326,21 @@ function graphical {
 function ohmyzsh {
 
 	clear; RES1=$(reader 0)
+
 	echo -e "=============== OMZ =============== \n" 
 	touch /home/"$SUDOUSER"/omz.sh
 	echo '#!/bin/bash' > /home/"$SUDOUSER"/omz.sh
-	echo 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /home/"$SUDOUSER"/omz.sh
-	echo 'sudo ln -s "$HOME"/.zshrc /root/.zshrc' >> /home/"$SUDOUSER"/omz.sh
-	echo 'sudo ln -s "$HOME"/.oh-my-zsh /root/.oh-my-zsh' >> /home/"$SUDOUSER"/omz.sh
 	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /home/"$SUDOUSER"/omz.sh
 	echo 'git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "s/plugins=(.*/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
 	chown "$SUDOUSER" /home/"$SUDOUSER"/omz.sh
+	chmod +x /home/"$SUDOUSER"/omz.sh
 
 	echo '#!/bin/bash' > /root/omz.sh
-	echo 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"' >> /root/omz.sh
+	echo 'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"' >> /root/omz.sh
 	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /root/omz.sh
 	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /root/omz.sh
 	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /root/omz.sh
@@ -327,23 +349,23 @@ function ohmyzsh {
 	chmod +x /root/omz.sh
 
 	printer print 17
-	
+
 	echo " "
 	echo -e "=============== OK =============== \n" 
-	read -r -p "Press Enter to continue..."
+	read -r -p "$RES1"
 
 }
 
 function software {
 
-	systemctl mask lvm2-monitor
-	RES1=$(reader 0); RES4=$(render 3); RES5=$(render 4)
+	RES1=$(reader 0); RES4=$(reader 3); RES5=$(reader 4)
 
 	echo "disable_overscan=1" >> /boot/config.txt
 	echo "hdmi_drive=2" >> /boot/config.txt
 
-		dialog --title "$RES4" --backtitle "036 Creative Studios" \
+	dialog --title "$RES4" --backtitle "036 Creative Studios" \
 		--yesno "$RES5 \
+			-> Pi-Apps \n \
 			-> baobab \n \
 			-> ntfs-3g \n \
 			-> exfat-utils \n \
@@ -363,14 +385,12 @@ function software {
 	clear
 	echo -e "=============== SOFTWARE =============== \n" 
 
-	sudo apt install -y xrdp gdebi synaptic aptitude neofetch vlc libwnck-common libwnck22 \
+	apt install -y xrdp gdebi synaptic aptitude neofetch vlc libwnck-common libwnck22 \
 		baobab ntfs-3g exfat-fuse exfat-utils xarchiver numix-gtk-theme numix-icon-theme-circle
-
+	sudo -u "$SUDOUSER" bash -c 'wget -qO- https://raw.githubusercontent.com/Botspot/pi-apps/master/install | bash'
 	adduser xrdp ssl-cert
-	sudo systemctl enable xrdp
-	sudo systemctl enable xrdp-sesman
-	sudo systemctl enable preload
-	
+	systemctl enable xrdp
+	systemctl enable xrdp-sesman
 	echo " "
 	echo -e "=============== OK =============== \n" 
 	read -r -p "$RES1"
@@ -384,11 +404,9 @@ function software {
 
 function finisher {
 
-	RES6=$(render 5)
-
+	RES6=$(reader 5)
 	clear; dialog --msgbox "$RES6" 7 50
-	clear; printer print 18
-	exit 0
+	clear; printer print 18; exit 0
 }
 
 core

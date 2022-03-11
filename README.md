@@ -11,6 +11,7 @@ Configuration Scripts for Arch Linux/Raspberry OS Lite and Oracle for Raspberry 
 - Medium understanding of GNU/Linux
 - Some binaries, depending on the script
 - Obviously, a Raspberry Pi 4
+- For Python scripts, you need Python 3.5 or above
 
 ## Getting Started
 
@@ -26,6 +27,17 @@ Configuration Scripts for Arch Linux/Raspberry OS Lite and Oracle for Raspberry 
 - :warning: **Only Raspberry Pi aarch64**
   - armhf/armv7 not works
 
+## Also Python?
+
+- I recommend to use python scripts, works at 100% similar than bash scripts, the performance in python is better
+- Static typing is enabled by default, please run your scripts with python3 only
+- Ubuntu rolling is not available and suitable for python, only shell
+- Only one module is required, please install pythondialog as root
+
+```bash
+$ pip install pythondialog
+```
+
 ## archrpi4-install?
 
 - :information_source: The objective of this script is detect your SD Card in a USB SD Reader, this will make partitions and format in that card, and this script downloads the latest Arch Linux ARM tarball for unpack and get your Arch system ready, it puts the archrpi4-config script in the home of root user, only for Raspberry Pi aarch64
@@ -36,8 +48,14 @@ Configuration Scripts for Arch Linux/Raspberry OS Lite and Oracle for Raspberry 
 
 - :warning: **Please install this software**
 
-  - This scripts works in all GNU/Linux distros but you need this binaries
+  - This script works in all GNU/Linux distros but you need this binaries
     - `dialog parted wget bsdtar (libarchive)`
+
+- :warning: **Python version**
+
+  - Install this module for root with pip
+    - `pythondialog`
+
 
 ## What About With Arch Linux ARM
 
@@ -47,19 +65,31 @@ archpi4-install puts archrpi4-config script for run
 
 ```bash
 cd /root/
-./arch-config
+./arch-config #This would be python or shell, depending of your script choose
 ```
 
-If you don't have that script for any reason, you must update the Arch Linux ARM repositories, like this and clone
+If you don't have that script for any reason, you must update the Arch Linux ARM repositories, like this and clone (run as root)
 
 ```bash
 pacman-key --init
 pacman-key --populate archlinuxarm
 pacman -Sy git
 git clone https://github.com/victor7w7r/036raspberry
-cd 036raspberry
+cd ./036raspberry/shell
 chmod +x arch-config
 ./arch-config
+```
+
+If you are using python, please install python-pip and install pythondialog (run as root)
+
+```bash
+pacman-key --init
+pacman-key --populate archlinuxarm
+pacman -Sy git python-pip dialog
+git clone https://github.com/victor7w7r/036raspberry
+cd ./036raspberry/python
+pip install pythondialog
+python3 arch-config.py
 ```
 
 If you need to change to another timezone, use this order
@@ -83,18 +113,26 @@ The default login credentials is pi / raspberry
 - :warning: **Only Works in Raspberry Pi OS Lite with aarch64**
   - This script may not work if you have a Raspberry Pi OS with the default desktop, if you don't have any idea to download the Lite version, [click here](https://downloads.raspberrypi.org/raspios_lite_arm64/images/)
 
-- :warning: **Sid Sid Sid**
-  - This script use Debian Sid repositories for install, at this moment, i didn't have problems with Sid packages while testing, but this repository is some unstable, if you have problems in system packages, wait some days and try to run the script again
-
-You must update the repositories and install git, like this (run as superuser)
+You must update the repositories and install git, like this (run as root)
 
 ```bash
 apt update
 apt install git
-git clone https://github.com/victor7w7r/036raspberry/
-cd 036raspberry
+git clone https://github.com/victor7w7r/036raspberry
+cd ./036raspberry/shell
 chmod +x raspios-config
 ./raspios-config #(If you are not superuser, use with sudo)
+```
+
+If you are using python, please install python-pip and install pythondialog (run as root)
+
+```bash
+apt update -y 
+apt install -y python3-pip dialog git
+git clone https://github.com/victor7w7r/036raspberry
+cd ./036raspberry/python
+pip install pythondialog
+python3 raspi-config.py
 ```
 
 ## What About With Oracle Linux Config
@@ -107,7 +145,6 @@ The default login credentials is root / oracle
 ```bash
 growpart /dev/mmcblk1 3
 btrfs filesystem resize max /
-reboot
 ```
 
 - :bulb: **Features**
@@ -120,20 +157,27 @@ reboot
 - :warning: **Only Works in Oracle Linux 8**
   - YUM commands don't work
 
-You must update the repositories like this and install git, like this (run as superuser)
+You must update the repositories like this and install git, like this (run as root)
 
 ```bash
 dnf update -y
 dnf install git -y
 git clone https://github.com/victor7w7r/036raspberry/
-cd 036bootstrap
+cd ./036raspberry/shell
 chmod +x olrpi4-config
 ./olrpi4-config #(If you are not superuser, use with sudo)
 ```
 
-## Spanish Folder?
+If you are using python, please install python-pip and install pythondialog (run as root)
 
-I born and live in Ecuador, of course i made a spanish scripts version, sorry for my bad english. :blush:
+```bash
+dnf update -y
+dnf install git python39 python39-pip dialog -y
+python3.9 -m pip install pythondialog
+git clone https://github.com/victor7w7r/036raspberry/
+cd ./036raspberry/python
+python3.9 oraclelinux-config.py
+```
 
 ## TODO
 
@@ -144,8 +188,3 @@ I born and live in Ecuador, of course i made a spanish scripts version, sorry fo
 - Editor: [vscode](https://code.visualstudio.com/)
 - Lint and Syntax Check: [ShellCheck](https://marketplace.visualstudio.com/items?itemName=timonwong.shellcheck)
 - Operating System Tests: [Arch Linux ARM](https://archlinuxarm.org/)
-
-## Thanks at this repositories for code snippets
-
-- [Desktopify](https://github.com/wimpysworld/desktopify) (Convert Ubuntu Server for Raspberry Pi to a Desktop.)
-- [ZeroTierOne](https://github.com/zerotier/ZeroTierOne) (Free VPN)

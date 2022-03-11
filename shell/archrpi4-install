@@ -8,6 +8,8 @@ fi
 rm /tmp/diskmenutemp.sh* 2> /dev/null
 DISKMENUTEMP=/tmp/diskmenutemp.sh.$$
 
+LANGUAGE=0
+
 function cleanup { rm $DISKMENUTEMP; $; exit; }
 trap cleanup; SIGHUP SIGINT SIGTERM
 
@@ -69,12 +71,14 @@ function printer() {
 
 function reader() {
 
+	POSITION="${1}"
+
 	local DICTIONARY_ENG=(
 		"ATTENTION!!! Your SD card would be listed as a USB device, ensure that your SD is empty and ready for format"
 		"Format a Device" 
 		"Choose a device"
 		"DANGER ZONE!!!"
-		"This device will be format Continue? \n"
+		"This device will be format Continue?"
 		"Press Enter to continue..."
 		"At the superuser home directory, we put a configurer script if you want" 
 		"READY!!!, Your SD was installed with Arch Linux ARM for Raspberry Pi 4, login as root/root, if you have errors, please report at 036raspberry in GitHub"
@@ -82,9 +86,10 @@ function reader() {
 
 	local DICTIONARY_ESP=(
 		"ATENCIÓN!!! Tu tarjeta SD debe ser mostrado como un dispositivo USB, verifica que tu SD está vacía y lista para formatear"
-		"Tarjeta SD"
+		"Formatear un dispositivo"
 		"Elige un dispositivo para formatear"
-		"Este dispositivo se va a formatear ¿Continuar? \n"
+		"ZONA DE PELIGRO!!"
+		"Este dispositivo se va a formatear ¿Continuar?"
 		"Presione Enter para continuar..."
 		"En la carpeta home de root está disponible el script de configuración, si lo deseas"
 		"LISTO!!!, Tu SD fue instalada con Arch Linux ARM para la Raspberry Pi 4, inicia sesión como root/root, si tienes errores, repórtalo a 036raspberry"
@@ -109,9 +114,7 @@ function language {
 	echo "1) English"; echo "2) Espanol"
 	read -n 1 -r OPTION
 	case $OPTION in
-		1) LANGUAGE=1;;
-		2) LANGUAGE=2;;
-		*) exit 1;;
+		1) LANGUAGE=1;; 2) LANGUAGE=2;; *) exit 1;;
 	esac
 }
 
@@ -253,9 +256,7 @@ function diskmenu {
 	dialog --clear --backtitle "036 Creative Studios" --title "$RES2" \
 		--menu "$RES3"\
 		15 50 4 "${ARGSUSB[@]}" 2>"${DISKMENUTEMP}"
-
 	CHOICE=$(<"${DISKMENUTEMP}")
-
 	case $CHOICE in
 		"$CHOICE") diskformat "$CHOICE";;
 		*) clear;;
@@ -267,14 +268,12 @@ function diskformat() {
 	
 	if [ "$1" == "" ]; then clear; exit 0; fi
 	RES4=$(reader 3); RES5=$(reader 4); RES6=$(reader 5)
-
 	dialog --title "$RES4" --backtitle "036 Creative Studios" \
 		--yesno "$RES5\n $1" 7 60
-
 	response=$?; clear
-
 	if [ $response -eq 0 ]; then
 		printer print 7
+		umount -f "$1"?* &> /dev/null
 		parted --script "$1" \
 			mklabel msdos \
 			mkpart primary fat32 1MiB 200MiB \
@@ -284,14 +283,11 @@ function diskformat() {
 		echo " "
 		echo -e "=============== OK =============== \n" 
 		read -r -p "$RES6"
-		clear; printer print 8
 
-		mkfs.ext4 "$1"2
-		mkfs.fat -F32 "$1"1
-		mkdir /mnt/boot 
-		mkdir /mnt/root
-		mount "$1"2 /mnt/root
-		mount "$1"1 /mnt/boot
+		clear; printer print 8
+		mkfs.ext4 "$1"2; mkfs.fat -F32 "$1"1
+		mkdir /mnt/boot; mkdir /mnt/root
+		mount "$1"2 /mnt/root; mount "$1"1 /mnt/boot
 
 		echo " "
 		echo -e "=============== OK =============== \n" 
@@ -304,21 +300,19 @@ function diskformat() {
 
 function baseinstall {
 
-	RES6=$(reader 5); printer print 8
+	printer print 9
 	wget http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz -P /mnt/root/
 	bsdtar -xpf /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz -C /mnt/root/
 	sync
 	rm /mnt/root/ArchLinuxARM-rpi-aarch64-latest.tar.gz
 	mv /mnt/root/boot/* /mnt/boot/
 	sed -i 's/mmcblk0/mmcblk1/g' /mnt/root/etc/fstab
-	sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin Yes/' \
+	sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin yes/' \
 		/mnt/root/etc/ssh/sshd_config &> /dev/null
-	wget https://raw.githubusercontent.com/victor7w7r/036raspberry/master/archrpi4-config -P /mnt/root/root/
+	wget https://raw.githubusercontent.com/victor7w7r/036raspberry/master/shell/archrpi4-config -P /mnt/root/root/
 	chmod +x /mnt/root/root/archrpi4-config
-	umount /mnt/boot 
-	umount /mnt/root 
-	rm -rf /mnt/boot 
-	rm -rf /mnt/root
+	umount /mnt/boot; umount /mnt/root 
+	rm -rf /mnt/boot; rm -rf /mnt/root
 	echo " "
 	echo -e "=============== OK =============== \n" 
 	read -r -p "$RES6"
@@ -327,6 +321,7 @@ function baseinstall {
 }
 
 function finisher {
+	
 	clear; RES7=$(reader 6); RES8=$(reader 7)
 	dialog --msgbox "$RES7" 8 60
 	dialog --msgbox "$RES8" 10 60

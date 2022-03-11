@@ -13,14 +13,14 @@ LOCALESTEMP=/tmp/localestemp.sh.$$
 HOSTTEMP=/tmp/hosttemp.sh.$$
 GRAPHICALTEMP=/tmp/graphicaltemp.sh.$$
 
-SUDOUSER=""
+SUDOUSER=""; LANGUAGE=0
 
 function cleanup { rm $LOCALESTEMP; $HOSTTEMP; $GRAPHICALTEMP exit; }
 
 trap cleanup; SIGHUP SIGINT SIGTERM
 
 function core { clear; language; cover; sleep 1s; verify; packages; hostnamer; localer
-				newuser; swapper; graphical; aur; ohmyzsh; software; finisher;}
+				newuser; graphical; aur; swapper; ohmyzsh; software; finisher;}
 
 function printer() {
 
@@ -94,6 +94,8 @@ function printer() {
 
 function reader() {
 
+	POSITION="${1}"
+
 	local DICTIONARY_ENG=(
 		"Press Enter to continue..."
 		"Please write your hostname (ex: A036-rpi4)"
@@ -141,9 +143,7 @@ function language {
 	echo "1) English"; echo "2) Espanol"
 	read -n 1 -r OPTION
 	case $OPTION in
-		1) LANGUAGE=1;;
-		2) LANGUAGE=2;;
-		*) exit 1;;
+		1) LANGUAGE=1;; 2) LANGUAGE=2;; *) exit 1;;
 	esac
 }
 
@@ -197,6 +197,7 @@ function cover {
 }
 
 function verify {
+
     ARCH=$(uname -m); OPERATING=$(uname -o)
 	SELECTOR=""
 	PI="$(cat /sys/firmware/devicetree/base/model)"
@@ -227,7 +228,6 @@ function verify {
 
 	printer print 5; pacman-key --init &> /dev/null
 	pacman-key --populate archlinuxarm  &> /dev/null
-
     printer print 6; pacman -Sy &> /dev/null
 
     SELECTOR="lsb_release"; commandverify "$SELECTOR"; local res=$?
@@ -266,13 +266,11 @@ function packages {
 
 	clear; RES1=$(reader 0)
 	printer print 11
-
 	systemctl enable sshd &> /dev/null
 	systemctl start sshd &> /dev/null
-
 	pacman -Syyu --noconfirm 
 	pacman -S sudo git wget rsync networkmanager neofetch \
-	screen unrar p7zip vim zsh --noconfirm 
+	screen unrar p7zip vim zsh python-pip --noconfirm 
 
 	echo -e "=============== OK =============== \n" 
 	read -r -p "$RES1"
@@ -300,11 +298,9 @@ function hostnamer {
 		echo "127.0.1.1        ${DATA}" >> /etc/hosts
 		return;;
     1) 
-        clear; exit 0  
-        return;;
+        clear; exit 0; return;;
     255) 
-        clear; exit 0
-        return;;
+        clear; exit 0; return;;
     esac
 }
 
@@ -321,9 +317,7 @@ function localer {
 		--menu "$RES4" 12 50 4 \
 		Spanish "es_ES" \
 		English "en_US" 2>"${LOCALESTEMP}"
-
 	menuitem=$(<"${LOCALESTEMP}")
-
 	case $menuitem in
 		Spanish) 
 			clear
@@ -349,27 +343,12 @@ function newuser {
 
 	clear; printer print 13
 	RES1=$(reader 0); RES5=$(reader 4)
-	
 	read -r -p "$RES5" SUDOUSER
 	useradd --create-home "$SUDOUSER"
 	passwd "$SUDOUSER"
-	usermod -aG wheel "$SUDOUSER"
+	usermod -aG wheel,storage,power "$SUDOUSER"
 	userdel alarm
-	sed -i 's/^#.*%wheel ALL=(ALL) ALL$/%wheel ALL=(ALL) ALL/' /etc/sudoers &> /dev/null
-
-	echo " "
-	echo -e "=============== OK =============== \n" 
-	read -r -p "$RES1"
-}
-
-function swapper {
-
-	clear; RES1=$(reader 0)
-	echo -e "=============== SWAPPING =============== \n" 
-	dd if=/dev/zero of=/swapfile bs=1M count=1024 status=progress
-	chmod 600 /swapfile; mkswap /swapfile; swapon /swapfile
-	echo "swapfile none swap defaults 0 0" >> /etc/fstab
-	echo "vm.swappiness=1" >> /etc/sysctl.d/99-sysctl.conf
+	sed -i 's/^#.*%wheel ALL=(ALL:ALL) ALL$/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers &> /dev/null
 	echo " "
 	echo -e "=============== OK =============== \n" 
 	read -r -p "$RES1"
@@ -386,13 +365,12 @@ function graphical {
 			KDE "KDE Desktop Environment" \
 			XORG "Minimal xorg Desktop" \
 			NOGUI "No GUI" 2>"${GRAPHICALTEMP}"
-
 	menuitem=$(<"${GRAPHICALTEMP}")
 	case $menuitem in
 		XFCE) 
 			clear
 			echo -e "=============== XFCE =============== \n" 
-			pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm
+			pacman -S xorg-server xf86-video-fbdev xorg-xinit --noconfirm
 			pacman -S xfce4 gdm xfce4-goodies ttf-ubuntu-font-family gtk-engines gtk-engine-murrine \
 				gnome-themes-standard xdg-user-dirs ttf-dejavu gvfs xfce4-notifyd network-manager-applet volumeicon --noconfirm
 			systemctl enable gdm
@@ -406,7 +384,7 @@ function graphical {
 		GNOME) 
 			clear
 			echo -e "=============== GNOME =============== \n" 
-			pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm
+			pacman -S xorg-server xf86-video-fbdev xorg-xinit --noconfirm
 			pacman -S gnome gdm gnome-themes-standard network-manager-applet --noconfirm
 			systemctl enable gdm
 			echo " "
@@ -416,7 +394,7 @@ function graphical {
 		KDE) 
 			clear
 			echo -e "=============== KDE =============== \n" 
-			pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm
+			pacman -S xorg-server xf86-video-fbdev xorg-xinit --noconfirm
 			pacman -S plasma plasma-wayland-session kde-applications network-manager-applet \
 				network-manager-applet volumeicon --noconfirm
 			systemctl enable sddm.service
@@ -427,7 +405,7 @@ function graphical {
 		XORG) 
 			clear
 			echo -e "=============== XORG ONLY =============== \n" 
-			pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm
+			pacman -S xorg-server xf86-video-fbdev xorg-xinit --noconfirm
 
 			echo " "
 			echo -e "=============== OK =============== \n" 
@@ -465,37 +443,47 @@ function graphical {
 function aur {
 
 	clear; RES1=$(reader 0); printer print 15
-
-	pacman -S --needed base-devel fakeroot packer go --noconfirm
-
+	pacman -S --needed base-devel fakeroot packer --noconfirm
 	sudo -u "$SUDOUSER" bash -c 'cd; git clone https://aur.archlinux.org/yay-bin.git'
 	sudo -u "$SUDOUSER" bash -c 'cd; cd yay-bin; makepkg -si'
 	sudo -u "$SUDOUSER" bash -c 'cd; rm -rf yay-bin'
-
 	echo " "
 	echo -e "=============== OK =============== \n" 
 	read -r -p "$RES1"
 
 }
 
+function swapper {
+
+	clear; RES1=$(reader 0)
+	echo -e "=============== SWAPPING =============== \n" 
+	sudo -u "$SUDOUSER" bash -c 'cd; git clone https://aur.archlinux.org/zramswap.git'
+	sudo -u "$SUDOUSER" bash -c 'cd; cd zramswap; makepkg -si'
+	sudo -u "$SUDOUSER" bash -c 'cd; rm -rf zramswap'
+	sudo systemctl enable zramswap.service
+	echo " "
+	echo -e "=============== OK =============== \n" 
+	read -r -p "$RES1"
+}
+
 function ohmyzsh {
 
 	clear
 	echo -e "=============== OMZ =============== \n" 
+
 	touch /home/"$SUDOUSER"/omz.sh
 	echo '#!/bin/bash' > /home/"$SUDOUSER"/omz.sh
-	echo 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /home/"$SUDOUSER"/omz.sh
-	echo 'sudo ln -s "$HOME"/.zshrc /root/.zshrc' >> /home/"$SUDOUSER"/omz.sh
-	echo 'sudo ln -s "$HOME"/.oh-my-zsh /root/.oh-my-zsh' >> /home/"$SUDOUSER"/omz.sh
 	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /home/"$SUDOUSER"/omz.sh
 	echo 'git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "s/plugins=(.*/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
 	chown "$SUDOUSER" /home/"$SUDOUSER"/omz.sh
+	chmod +x /home/"$SUDOUSER"/omz.sh
 
 	echo '#!/bin/bash' > /root/omz.sh
-	echo 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"' >> /root/omz.sh
+	echo 'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"' >> /root/omz.sh
 	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /root/omz.sh
 	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /root/omz.sh
 	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /root/omz.sh
@@ -526,7 +514,7 @@ function software {
 		-> xarchiver \n \
 		-> xorgxrdp \n \
 		-> visual-studio-code \n \
-		-> rpi-eeprom-git \n \
+		-> rpi-eeprom \n \
 		-> rpi-imager \n \
 		-> box64 \n \
 		-> numix-gtk-theme-git\n \
@@ -545,7 +533,7 @@ function software {
 		echo 'yay -S baobab ntfs-3g exfatprogs exfat-utils \' >> /home/"$SUDOUSER"/software.sh
 		echo 'xarchiver gparted xrdp \' >> /home/"$SUDOUSER"/software.sh
 		echo 'xorgxrdp pi-bluetooth visual-studio-code-bin preload \' >> /home/"$SUDOUSER"/software.sh
-		echo 'rpi-eeprom-git rpi-imager box64 \' >> /home/"$SUDOUSER"/software.sh
+		echo 'rpi-eeprom rpi-imager box64 \' >> /home/"$SUDOUSER"/software.sh
 		echo 'libdbusmenu-glib libdbusmenu-gtk3 appmenu-gtk-module numix-gtk-theme \' >> /home/"$SUDOUSER"/software.sh
 		echo 'numix-icon-theme-git numix-circle-icon-theme-git' >> /home/"$SUDOUSER"/software.sh
 
@@ -554,7 +542,7 @@ function software {
 		echo 'systemctl enable preload' >> /home/"$SUDOUSER"/software.sh
 
 		chown "$SUDOUSER" /home/"$SUDOUSER"/software.sh
-
+		chmod +x /home/"$SUDOUSER"/software.sh
 		printer print 17
 
 		echo " "

@@ -7,19 +7,16 @@ fi
 
 rm /tmp/localestemp.sh* 2> /dev/null
 rm /tmp/hosttemp.sh* 2> /dev/null
-	
 LOCALESTEMP=/tmp/localestemp.sh.$$
 HOSTTEMP=/tmp/hosttemp.sh.$$
 
-XRDPTOGGLE=0; SUDOUSER=""
+SUDOUSER=""; XRDPTOGGLE=0; LANGUAGE=0
 
 function cleanup { rm $LOCALESTEMP; $HOSTTEMP; exit; }
-
 trap cleanup; SIGHUP SIGINT SIGTERM
 
-function core { clear; cover; language; sleep 1s; verify; packages; hostnamer; localer
+function core { clear; language; cover; sleep 1s; verify; packages; hostnamer; localer
 				cockpit; newuser; graphical; remote; kvm; ohmyzsh; software; finisher; }
-
 
 function printer() {
 
@@ -83,6 +80,8 @@ function printer() {
 
 function reader() {
 
+	POSITION="${1}"
+
 	local DICTIONARY_ENG=(
 		"Press Enter to continue..."
 		"Please write your hostname (ex: A036-oracle)"
@@ -96,7 +95,7 @@ function reader() {
 		"More Sofware!!"
 		"This script has a little pack of software, Do you like it?\n"
 		"READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub"
-	
+		"Please reboot your server to make changes"
 	)
 
 	local DICTIONARY_ESP=(
@@ -105,7 +104,7 @@ function reader() {
 		"America/Guayaquil es el timezone por defecto, si quieres cambiarlo por algún otro, aquí está la orden\n\n \
 		timedatectl set-timezone REGION/CITY"
 		"Elige tu distribución de teclado y tu locale"
-		"Escribe tu nuevo usuasrio: "
+		"Escribe tu nuevo usuario: "
 		"Entorno Gráfico"
 		"¿Instalar XFCE como Entorno gráfico?" 
 		"¿Instalar el Suite de Oracle KVM?"
@@ -134,9 +133,7 @@ function language {
 	echo "1) English"; echo "2) Espanol"
 	read -n 1 -r OPTION
 	case $OPTION in
-		1) LANGUAGE=1;;
-		2) LANGUAGE=2;;
-		*) exit 1;;
+		1) LANGUAGE=1;; 2) LANGUAGE=2;; *) exit 1;;
 	esac
 }
 
@@ -250,10 +247,8 @@ function verify {
 function packages {
 
 	RES1=$(reader 0); clear; printer print 9
-
 	dnf install rsync sudo nano git net-tools wget nano e2fsprogs \
-		cockpit glibc-all-langpacks glibc-langpack-es -y
-
+		cockpit glibc-all-langpacks glibc-langpack-es zsh -y
 	echo -e "=============== OK =============== \n" 
 	read -r -p "$RES1"
 
@@ -261,26 +256,21 @@ function packages {
 
 function hostnamer {
 
-	RES2=$(reader 1); RES3=$(reader 2)
-
-	clear
+	clear; RES2=$(reader 1); RES3=$(reader 2)
 	dialog --title "Hostname" \
     --backtitle "$RES2" \
-    --inputbox "$RES3" 8 80 2>"$HOSTTEMP"
+    --inputbox "$RES3" 11 80 2>"$HOSTTEMP"
 
-    RESPONSE=$?
-    DATA=$(<$HOSTTEMP)
+    RESPONSE=$?; DATA=$(<$HOSTTEMP)
 
     case $RESPONSE in
     0) 
 		hostnamectl set-hostname "${DATA}" 
 		return;;
     1) 
-        clear; exit 0  
-        return;;
+        clear; exit 0; return;;
     255) 
-        clear; exit 0
-        return;;
+        clear; exit 0; return;;
     esac
 	
 }
@@ -289,7 +279,6 @@ function localer {
 
 	RES4=$(reader 3); RES5=$(reader 4); clear
 	dialog --msgbox "$RES4" 9 50
-
 	timedatectl set-timezone America/Guayaquil
 
 	dialog --clear --backtitle "036 Creative Studios" \
@@ -297,9 +286,7 @@ function localer {
 		--menu "$RES5" 12 50 4 \
 		Spanish "es" \
 		English "us" 2>"${LOCALESTEMP}"
-
 	menuitem=$(<"${LOCALESTEMP}")
-
 	case $menuitem in
 		Spanish) 
 			clear
@@ -342,7 +329,6 @@ function newuser {
 function graphical {
 
 	RES1=$(reader 0); RES6=$(reader 5); RES7=$(reader 6)
-
 	dialog --title "$RES6" --backtitle "036 Creative Studios" \
 		--yesno "$RES7" 7 60
 
@@ -384,7 +370,6 @@ function remote {
 	if [ $XRDPTOGGLE -eq 1 ]; then
 
 		echo -e "=============== XRDP ===============  \n" 
-
 		dnf install xrdp --assumeyes 
 		touch /home/"$SUDOUSER"/.Xclients
 		echo "xfce4-session" > /home/"$SUDOUSER"/.Xclients
@@ -394,8 +379,6 @@ function remote {
 		systemctl enable xrdp-sesman
 		systemctl start xrdp
 		systemctl start xrdp-sesman
-		firewall-cmd --permanent --add-port=3389/tcp 
-		firewall-cmd --reload
 		chcon --type=bin_t /usr/sbin/xrdp
 		chcon --type=bin_t /usr/sbin/xrdp-sesman
 
@@ -436,22 +419,22 @@ function kvm {
 
 function ohmyzsh {
 
-	clear
+	clear; RES1=$(reader 0)
+	
 	echo -e "=============== OMZ =============== \n" 
 	touch /home/"$SUDOUSER"/omz.sh
 	echo '#!/bin/bash' > /home/"$SUDOUSER"/omz.sh
-	echo 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' >> /home/"$SUDOUSER"/omz.sh
+	echo 'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /home/"$SUDOUSER"/omz.sh
-	echo 'sudo ln -s "$HOME"/.zshrc /root/.zshrc' >> /home/"$SUDOUSER"/omz.sh
-	echo 'sudo ln -s "$HOME"/.oh-my-zsh /root/.oh-my-zsh' >> /home/"$SUDOUSER"/omz.sh
 	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /home/"$SUDOUSER"/omz.sh
 	echo 'git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions' >> /home/"$SUDOUSER"/omz.sh
 	echo 'sed -i -e "s/plugins=(.*/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/" .zshrc' >> /home/"$SUDOUSER"/omz.sh
 	chown "$SUDOUSER" /home/"$SUDOUSER"/omz.sh
+	chmod +x /home/"$SUDOUSER"/omz.sh
 
 	echo '#!/bin/bash' > /root/omz.sh
-	echo 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"' >> /root/omz.sh
+	echo 'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"' >> /root/omz.sh
 	echo 'sed -i -e "s/ZSH_THEME=.*/ZSH_THEME=\"pmcgee\"/" .zshrc' >> /root/omz.sh
 	echo 'sed -i -e "/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true" .zshrc' >> /root/omz.sh
 	echo 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting' >> /root/omz.sh
@@ -482,27 +465,22 @@ function software {
 			-> numix-gtk-theme \n \
 			-> numix-icon-theme \n \
 			-> numix-icon-theme-circle" 20 65
-
 	response=$?; clear
-
 	if [ $response = 0 ]; then
-	
 		clear
 		echo -e "=============== SOFTWARE =============== \n" 
 		dnf install baobab ntfs-3g exfatprogs nautilus gedit tar yum-utils --assumeyes
 		dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm --assumeyes
 		dnf install numix-gtk-theme --assumeyes
-		dnf install gnome-icon-theme --assumeyes
+		dnf install http://mirror.centos.org/centos/7/os/x86_64/Packages/gnome-icon-theme-3.12.0-1.el7.noarch.rpm --assumeyes
 		dnf install numix-icon-theme --assumeyes
 		dnf install numix-icon-theme-circle --assumeyes
 		dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm --assumeyes
 		echo " "
-		echo -e "$RES1" 
-		read -r -p "Press Enter to continue..."
-
+		echo -e "=============== OK =============== \n" 
+		read -r -p "$RES1"
 	else
-		clear
-		return
+		clear; return
 	fi
 
 }
@@ -511,8 +489,7 @@ function finisher {
 
 	clear; RES11=$(reader 10)
 	dialog --msgbox "$RES11" 7 50
-	clear; printer print 12
-	exit 0
+	clear; printer print 13; exit 0
 
 }
 

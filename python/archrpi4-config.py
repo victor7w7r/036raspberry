@@ -16,7 +16,7 @@ SUDOUSER: str = ""
 
 def main() -> None: 
     utils.clear(); language(); cover(); verify(); packages(); hostnamer()
-    localer(); newuser(); swapper(); graphical(); aur(); ohmyzsh(); software(); 
+    localer(); newuser(); graphical(); aur(); swapper(); ohmyzsh(); software(); finisher()
     
 def printer(type: str, position: int) -> None:
     
@@ -48,8 +48,8 @@ def printer(type: str, position: int) -> None:
 
     DICTIONARY_ESP=(
         "Este sistema no es GNU/Linux, saliendo",
-		"Este script sólo se ejecuta en procesadores de aarch64",
-		"Este script sólo se ejecuta en Raspberry Pi 4",
+		"Este script solo se ejecuta en procesadores de aarch64",
+		"Este script solo se ejecuta en Raspberry Pi 4",
 		"Arch Linux pacman no está disponible, ¿Acaso esto no es Arch Linux?",
 		"No tienes conexión a internet, por favor revisa e inténtalo de nuevo",
 		"Llenando llaves de Arch ARM...",
@@ -88,7 +88,7 @@ def reader(position: int) -> str:
     DICTIONARY_ENG=(
         "Press Enter to continue...",
 		"Please write your hostname (ex: A036-rpi4)",
-		"America/Guayaquil is the timezone by default, if you want to change, here is the command\n\n ln -sf /usr/share/zoneinfo/REGION/CITY /etc/localtime",
+		"America/Guayaquil is the timezone by default, if you want to change, here is the command\n ln -sf /usr/share/zoneinfo/REGION/CITY /etc/localtime",
 		"Choose your locale, if you want to change to other locales, check the README of the Github of this project",
 		"Write your new user: ",
 		"Graphical Environment",
@@ -100,15 +100,15 @@ def reader(position: int) -> str:
 
     DICTIONARY_ESP=(
         "Presione Enter para continuar...",
-		"Por favor escriba su hostname (ej: A036-rpi4)" 
-		"America/Guayaquil es el timezone por defecto, si quieres cambiarlo por algún otro, aquí está la orden\n\n ln -sf /usr/share/zoneinfo/REGION/CITY /etc/localtime",
+		"Por favor escriba su hostname (ej: A036-rpi4)",
+		"America/Guayaquil es el timezone por defecto, si quieres cambiarlo por algun otro, aquí está la orden\n ln -sf /usr/share/zoneinfo/REGION/CITY /etc/localtime",
 		"Elige tu Locale, si quieres cambiar a otros, revisa el README dentro del GitHub de este proyecto",
 		"Escribe tu nuevo usuario: ",
-		"Entorno Gráfico",
-		"Selecciona un GUI, estos son los más usados, Este script recomienda XFCE",
+		"Entorno Grafico",
+		"Selecciona un GUI, estos son los mas usados, Este script recomienda XFCE",
 		"Más Sofware!!",
 		"Este script tiene un pequeño pack de software, ¿Te gusta?",
-		"LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, repórtalo a 036raspberry",
+		"LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, reportalo a 036raspberry",
 	)
 
     if LANGUAGE == 1: return DICTIONARY_ENG[position]
@@ -130,6 +130,7 @@ def language() -> None:
     else: exit(1)
 
 def cover() -> None:
+    
     utils.clear()
     print(r'''                                     `"~>v??*^;rikD&MNBQku*;`                                           ''')
     print(r'''                                `!{wQNWWWWWWWWWWWWWWWNWWWWWWNdi^`                                       ''')
@@ -189,32 +190,30 @@ def verify() -> None:
         utils.clear(); printer("error",20); exit(1)
     if machine() != "aarch64":
         utils.clear(); printer("error",1); exit(1)
-    if not search("^Raspberry[[:space:]]Pi[[:space:]]4.*",PI):
+    if not search("^Raspberry\sPi\s4.*",PI):
         utils.clear(); printer("error",2); exit(1)
     if not commandverify("pacman"):
         utils.clear(); printer("error",3); exit(1)
     try: urlopen('http://google.com')
     except: utils.clear(); printer("error",4); exit(1)
-    
     printer("print",5)
-    call("pacman-key --init", shell=True)
-    call("pacman-key --populate archlinuxarm", shell=True)
+    system("pacman-key --init &> /dev/null")
+    system("pacman-key --populate archlinuxarm &> /dev/null ")
     printer("print",6) 
-    call("pacman -Sy", shell=True)
+    system("pacman -Sy &> /dev/null")
     if not commandverify("lsb_release"):
         printer("print",7)
-        call("pacman -S lsb-release --noconfirm", shell=True)
-        
+        system("pacman -S lsb-release --noconfirm &> /dev/null")
+    
     IS_ARCH = Popen("lsb_release -is", shell=True, stdout=PIPE).stdout.read().decode('utf-8').replace("\n", "")
     
-    if IS_ARCH != "lsb_release -is":
+    if IS_ARCH != "Arch":
         utils.clear(); printer("error",8); exit(1)
     if not commandverify("dialog"):
         printer("error",9)
-        call("pacman -S dialog --noconfirm", shell=True)
+        system("pacman -S dialog --noconfirm &> /dev/null")
         
-    call("pacman -S ncurses --noconfirm", shell=True)
-    
+    system("pacman -S ncurses --noconfirm &> /dev/null")
     printer("print",10)
     
     spinner = utils.spinning()
@@ -226,49 +225,50 @@ def verify() -> None:
 def packages() -> None:
     
     utils.clear(); printer("print",11)
-    call("systemctl enable sshd")
-    call("systemctl start sshd")
-    utils.live_tasker("pacman -Syyu --noconfirm")
-    utils.live_tasker("pacman -S sudo git wget rsync networkmanager neofetch screen unrar p7zip vim zsh --noconfirm")
+    system("systemctl enable sshd")
+    system("systemctl start sshd")
+    system("pacman -Syyu --noconfirm")
+    system("pacman -S sudo git wget rsync networkmanager neofetch screen unrar p7zip vim zsh python-pip --noconfirm")
     print("=============== OK =============== \n")
     input(reader(0))
     utils.clear(); printer("print",12)
-    utils.live_tasker("passwd")
+    system("passwd")
     print(" ")
     print("=============== OK =============== \n")
     input(reader(0))
     
 def hostnamer() -> None:
+    
     response = d.inputbox(reader(1), 8, 80)
-    if(response[0] == "ok" ):
+    if response[0] == "ok":
         with open('/etc/hostname', 'w') as f:
             f.write(response[1])
         with open('/etc/hosts', 'a') as f:
             f.write(f"\n127.0.1.1        {response[1]}")
-    elif(response[0] == "cancel" ): exit(0) 
+    elif response[0] == "cancel": exit(0) 
 
 def localer() -> None:
     
-    utils.clear()
-    choices = [("Spanish/Español","es_ES"),("English","en_US")]
-    d.msgbox(reader(2),9,50)
-    call("ln -sf /usr/share/zoneinfo/America/Guayaquil /etc/localtime", shell=True)
-    call("hwclock --systohc", shell=True)
+    utils.clear(); d.msgbox(reader(2),11,50)
+    system("ln -sf /usr/share/zoneinfo/America/Guayaquil /etc/localtime")
+    system("hwclock --systohc")
+    
+    choices = [("Spanish/Espanol","es_ES"),("English","en_US")]
     response = d.menu(reader(3), 15, 50, 4, choices)
-    if(response[0] == "ok" and response[1] == "Spanish/Español"):
+    if response[0] == "ok" and response[1] == "Spanish/Espanol":
         utils.clear()
-        call("sed -i 's/^#es_ES.UTF-8 UTF-8/es_ES.UTF-8 UTF-8/' /etc/locale.gen", shell=True)
-        call("locale-gen", shell=True)
+        system("sed -i 's/^#es_ES.UTF-8 UTF-8/es_ES.UTF-8 UTF-8/' /etc/locale.gen")
+        system("locale-gen")
         with open('/etc/locale.conf', 'w') as f:
             f.writelines([
                 'LANG="es_ES.UTF-8"\n',
                 'LC_TIME="es_ES.UTF-8"\n',
                 'LANGUAGE="es_EC:es_ES:es"'
             ])
-    elif(response[0] == "ok" and response[1] == "English"):
+    elif response[0] == "ok" and response[1] == "English":
         utils.clear()
-        call("sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen", shell=True)
-        call("locale-gen", shell=True)
+        system("sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen")
+        system("locale-gen")
         with open('/etc/locale.conf', 'w') as f:
             f.writelines([
                 'LANG="en_US.UTF-8"\n',
@@ -280,27 +280,19 @@ def localer() -> None:
 def newuser() -> None:
     
     global SUDOUSER
-    
     utils.clear(); printer("print",13)
     SUDOUSER = input(reader(4))
-    utils.live_tasker(f"useradd --create-home {SUDOUSER}")
-    utils.live_tasker(f"passwd {SUDOUSER}")
-    utils.live_tasker(f"usermod -aG wheel {SUDOUSER}")
-    call("userdel alarm")
-    call("sed -i 's/^#.*%wheel ALL=(ALL) ALL$/%wheel ALL=(ALL) ALL/' /etc/sudoers")
-    print(" ")
-    print("=============== OK =============== \n")
-    input(reader(0))
-    
-def swapper() -> None:
-    
-    print("=============== SWAPPING =============== \n")
-    
+    system(f"useradd --create-home {SUDOUSER}")
+    system(f"passwd {SUDOUSER}")
+    system(f"usermod -aG wheel,storage,power {SUDOUSER}")
+    system("userdel alarm")
+    system("sed -i 's/^#.*%wheel ALL=(ALL:ALL) ALL$/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers &> /dev/null")
     print(" ")
     print("=============== OK =============== \n")
     input(reader(0))
     
 def graphical() -> None:
+    
     utils.clear()
     choices = [
         ("XFCE","Xfce Desktop Environment"),
@@ -310,17 +302,21 @@ def graphical() -> None:
         ("NOGUI","No GUI")
     ]
     response = d.menu(reader(6), 15, 50, 4, choices)
-    
     if(response[0] == "ok" and response[1] == "XFCE"):
         utils.clear()
-        
         print("=============== XFCE =============== \n")
-        utils.live_tasker("pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm")
-        utils.live_tasker("pacman -S xfce4 gdm xfce4-goodies ttf-ubuntu-font-family gtk-engines gtk-engine-murrine --noconfirm")
-        utils.live_tasker("pacman -S gnome-themes-standard xdg-user-dirs ttf-dejavu gvfs xfce4-notifyd network-manager-applet volumeicon --noconfirm")
-        call("systemctl enable gdm")
-        call(f"touch /HOME/{SUDOUSER}/.xinitrc")
-        with open('/root/.xinitrc', 'w') as f: 
+        system("pacman -S xorg-server xf86-video-fbdev xorg-xinit --noconfirm")
+        system("pacman -S xfce4 gdm xfce4-goodies ttf-ubuntu-font-family gtk-engines gtk-engine-murrine --noconfirm")
+        system("pacman -S gnome-themes-standard xdg-user-dirs ttf-dejavu gvfs xfce4-notifyd network-manager-applet volumeicon --noconfirm")
+        system("systemctl enable gdm")
+        system(f"touch /HOME/{SUDOUSER}/.xinitrc")
+        system(f"touch /root/.xinitrc")
+        with open(f'/HOME/{SUDOUSER}/.xinitrc', 'w') as f: 
+            f.writelines([
+                'export XAUTHORITY=${HOME}/.Xauthority\n',
+                'exec dbus-run-session -- startxfce4',
+            ])
+        with open(f'/root/.xinitrc', 'w') as f: 
             f.writelines([
                 'export XAUTHORITY=${HOME}/.Xauthority\n',
                 'exec dbus-run-session -- startxfce4',
@@ -328,43 +324,40 @@ def graphical() -> None:
         print(" ")
         print("=============== OK =============== \n")
         input(reader(0))
-        
     elif(response[0] == "ok" and response[1] == "GNOME"):
         utils.clear()
         print("=============== GNOME =============== \n")
-        utils.live_tasker("pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm")
-        utils.live_tasker("pacman -S gnome gdm gnome-themes-standard network-manager-applet --noconfirm")
-        call("systemctl enable gdm")
+        system("pacman -S xorg-server xf86-video-fbdev xorg-xinit --noconfirm")
+        system("pacman -S gnome gdm gnome-themes-standard network-manager-applet --noconfirm")
+        system("systemctl enable gdm")
         print(" ")
         print("=============== OK =============== \n")
         input(reader(0))
     elif(response[0] == "ok" and response[1] == "KDE"):
         utils.clear()
         print("=============== KDE =============== \n")
-        utils.live_tasker("pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm")
-        utils.live_tasker("pacman -S plasma plasma-wayland-session kde-applications network-manager-applet network-manager-applet volumeicon --noconfirm")
-        call("systemctl enable sddm.service")
+        system("pacman -S xorg-server xf86-video-fbdev xorg-xinit --noconfirm")
+        system("pacman -S plasma plasma-wayland-session kde-applications network-manager-applet network-manager-applet volumeicon --noconfirm")
+        system("systemctl enable sddm.service")
         print(" ")
         print("=============== OK =============== \n")
         input(reader(0))
     elif(response[0] == "ok" and response[1] == "XORG"):
         utils.clear()
         print("=============== XORG ONLY =============== \n")
-        utils.live_tasker("pacman -S xorg-server xf86-video-fbturbo-git xorg-xinit --noconfirm")
+        system("pacman -S xorg-server xf86-video-fbdev xorg-xinit --noconfirm")
         print(" ")
         print("=============== OK =============== \n")
         input(reader(0))
         
     elif(response[0] == "ok" and response[1] == "NOGUI"): return
     else: exit(0)
-    
     utils.clear(); printer("print",14)
-    
-    utils.live_tasker("pacman -S alsa-utils alsa-firmware alsa-lib alsa-plugins pulseaudio-alsa pulseaudio-bluetooth bluez-utils libmm-glib modemmanager blueman --noconfirm")
-    utils.live_tasker("sudo systemctl enable ModemManager")
-    utils.live_tasker("sudo systemctl enable bluetooth")
-    utils.live_tasker("sudo systemctl start ModemManager")
-    utils.live_tasker("sudo systemctl start bluetooth")
+    system("pacman -S alsa-utils alsa-firmware alsa-lib alsa-plugins pulseaudio-alsa pulseaudio-bluetooth bluez-utils libmm-glib modemmanager blueman --noconfirm")
+    system("sudo systemctl enable ModemManager")
+    system("sudo systemctl enable bluetooth")
+    system("sudo systemctl start ModemManager")
+    system("sudo systemctl start bluetooth")
     
     with open('/boot/config.txt', 'w') as f: 
         f.writelines([
@@ -384,27 +377,38 @@ def graphical() -> None:
     input(reader(0))
     
 def aur() -> None:
+    
     utils.clear(); printer("print",15)
-
-    utils.live_tasker("pacman -S --needed base-devel fakeroot packer go --noconfirm")
-
-    call(f"sudo -u {SUDOUSER} bash -c 'cd; git clone https://aur.archlinux.org/yay-bin.git'",shell=True)    
-    call(f"sudo -u {SUDOUSER} bash -c 'cd; cd yay-bin; makepkg -si'",shell=True) 
-    call(f"sudo -u {SUDOUSER} bash -c 'cd; rm -rf yay-bin'",shell=True) 
+    system("pacman -S --needed base-devel fakeroot packer --noconfirm")
+    system(f"sudo -u {SUDOUSER} bash -c 'cd; git clone https://aur.archlinux.org/yay-bin.git'")    
+    system(f"sudo -u {SUDOUSER} bash -c 'cd; cd yay-bin; makepkg -si'") 
+    system(f"sudo -u {SUDOUSER} bash -c 'cd; rm -rf yay-bin'") 
     
     print(" ")
     print("=============== OK =============== \n")
     input(reader(0))
     
-def ohmyzsh() -> None:
+def swapper() -> None:
+    
     utils.clear()
-
+    print("=============== SWAPPING =============== \n")
+    system(f"sudo -u {SUDOUSER} bash -c 'cd; git clone https://aur.archlinux.org/zramswap.git'")
+    system(f"sudo -u {SUDOUSER} bash -c 'cd; cd zramswap; makepkg -si'") 
+    system(f"sudo -u {SUDOUSER} bash -c 'cd; rm -rf zramswap'")
+    system("systemctl enable zramswap.service")
+    print(" ")
+    print("=============== OK =============== \n")
+    input(reader(0))
+    
+def ohmyzsh() -> None:
+    
+    utils.clear()
     print("=============== OMZ =============== \n" )
-
+    system(f"touch /home/{SUDOUSER}/omz.sh")
     with open(f'/home/{SUDOUSER}/omz.sh', 'w') as f: 
         f.writelines([
             "#!/bin/bash\n",
-            'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"\n',
+            'sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"\n',
             'sed -i -e \'s/ZSH_THEME=.*/ZSH_THEME=\\\"pmcgee\\\"/\' .zshrc\n',
             "sed -i -e '/^source $ZSH.*/i ZSH_DISABLE_COMPFIX=true' .zshrc\n",
             r"git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting",
@@ -412,10 +416,11 @@ def ohmyzsh() -> None:
             r"git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions",
             "\n",
             "sed -i -e 's/plugins=(.*/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/' .zshrc"
-            ])
-    call(f'chown {SUDOUSER} /home/{SUDOUSER}/omz.sh', shell=True)
-    call(f'chmod +x /home/{SUDOUSER}/omz.sh', shell=True)
-        
+        ])
+    
+    system(f'chown {SUDOUSER} /home/{SUDOUSER}/omz.sh')
+    system(f'chmod +x /home/{SUDOUSER}/omz.sh')
+    system("touch /root/omz.sh'")
     with open('/root/omz.sh', 'w') as f: 
         f.writelines([
             "#!/bin/bash\n",
@@ -428,8 +433,8 @@ def ohmyzsh() -> None:
             "\n",
             "sed -i -e 's/plugins=(.*/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/' .zshrc"
         ])
-        
-    call(f'chmod +x /root/omz.sh', shell=True)
+    
+    system(f'chmod +x /root/omz.sh')
     
     printer("print",16)
 
@@ -438,12 +443,13 @@ def ohmyzsh() -> None:
     input(reader(0))
 
 def software() -> None: 
-    call('systemctl mask lvm2-monitor', shell=True)
+    
+    system('systemctl mask lvm2-monitor')
     
     if d.yesno(reader(8)+"""\n -> baobab \n -> ntfs-3g \n -> exfatprogs \n -> exfat-utils \n -> xrdp \n -> xarchiver \n -> xorgxrdp \n -> visual-studio-code \n -> rpi-eeprom-git \n -> rpi-imager \n -> numix-gtk-theme-git \n -> numix-icon-theme \n -> preload
         """ ,20,65) == d.OK:
         utils.clear()
-        call(f'touch /home/{SUDOUSER}/software.sh')
+        system(f'touch /home/{SUDOUSER}/software.sh')
         print("=============== SOFTWARE =============== \n")
         with open('/etc/X11/Xwrapper.config', 'w') as f: f.write('allowed_users=anybody')
         with open(f'/home/{SUDOUSER}/software.sh', 'w') as f:
@@ -452,18 +458,20 @@ def software() -> None:
                 "yay -S baobab ntfs-3g exfatprogs exfat-utils\\\n",
                 "xarchiver gparted xrdp \\\n",
                 "xorgxrdp pi-bluetooth visual-studio-code-bin preload \\\n",
-                "rpi-eeprom-git rpi-imager box64 \\\n",
+                "rpi-eeprom rpi-imager box64 \\\n",
                 "systemctl enable xrdp\n",
                 "systemctl enable xrdp-sesman\n",
                 "systemctl enable preload\n",
             ])
-        call(f'chmod +x /root/software.sh', shell=True)
+        system(f"chown {SUDOUSER} /home/{SUDOUSER}/software.sh")
+        system(f"chmod +x /home/{SUDOUSER}/software.sh")
         printer("print",17)
         print(" ")
         print("=============== OK =============== \n")
         input(reader(0))
 
 def finisher() -> None:
+    
     utils.clear(); d.msgbox(reader(9),7,50)
     utils.clear(); printer("print", 18); exit(0)
 
@@ -480,17 +488,7 @@ class utils:
         finally:
             tcsetattr(fd, TCSADRAIN, oldSettings)
         return answer
-    
-    def live_tasker(cmd: str) -> int:
-        task = Popen(cmd, stdout=PIPE, stderr=PIPE, encoding='utf8', shell=True)
-        try:  
-            while task.poll() is None:
-                for line in task.stdout:
-                    task.stdout.flush()
-                    print(line.replace("\n", ""))
-            return task.poll()
-        except: return 1
-    
+
     def spinning():
         while True:
             for cursor in '|/-\\':

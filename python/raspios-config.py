@@ -12,11 +12,11 @@ from dialog import Dialog
 d = Dialog(dialog="dialog")
 d.set_background_title("036 Creative Studios")
 
-LANGUAGE: int = 0; XRDPTOGGLE=1; SUDOUSER: str = ""
+LANGUAGE: int = 0;  SUDOUSER: str = ""
 
 def main() -> None: 
-    utils.clear(); language(); cover(); verify(); packages(); hostnamer(); localer()
-    cockpit(); newuser(); graphical(); remote(); kvm(); ohmyzsh(); software(); finisher()
+    utils.clear(); language(); cover(); verify(); packages()
+    newuser(); graphical(); ohmyzsh(); software(); finisher()
     
 def printer(type: str, position: int) -> None:
     
@@ -24,38 +24,48 @@ def printer(type: str, position: int) -> None:
 
     DICTIONARY_ENG=(
         "Your Operating System is not GNU/Linux, exiting",
-		"This script is only intended to run on Oracle Linux",
-		"This script is only intended to run on aarch64 devices.",
+		"This script is only intended to run on aarch64 Devices.",
 		"This script is only intended to run on Raspberry Pi 4 Devices.",
-		"DNF is not available in this system, this system isn't Oracle Linux, please use Oracle Linux 8?",
+		"APT is not available in this system, this system isn't Debian?",
+		"This Debian disto doesn't have a raspi-config app, please use Raspberry Pi OS Lite, exiting",
+		"Ok, is Raspbery Pi OS, but this is not a Raspberry Pi OS Lite, exiting",
 		"This PC doesn't have internet connection, please check",
-		"Updating Oracle Linux Repositories... Please Wait",
+		"Updating Debian repositories...",
+		"lsb_release is not available in this system, installing",
+		"Your Operating System is not Debian, exiting",
 		"dialog is not available in this system, installing",
 		"All dependencies is ok!",
+		"=============== SYSTEM UPDATE  =============== \n",
+		"=============== ROOT PASSWORD FOR YOUR SYSTEM =============== \n",
+		"=============== CHANGE TO A SID REPOSITORIES AND DIST UPGRADE =============== \n",
 		"=============== INSTALL CORE PACKAGES =============== \n",
-		"=============== COCKPIT SERVICE (IP:9090) =============== \n",
 		"=============== ADD A USER TO A SUDO GROUP =============== \n",
 		"We create a script called omz.sh in your home directory, after reboot, use chmod +x at omz.sh",
-		"Please reboot your server to make changes",
+		"READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub",
         "Your Python versión is less than 3.5, exiting",
         "You are not superuser, please run as root"
 	)
 
     DICTIONARY_ESP=(
-        "Este sistema no es GNU/Linux, saliendo",
-		"Este script sólo permite ejecutarse en Oracle Linux",
+		"Este sistema no es GNU/Linux, saliendo",
 		"Este script sólo se ejecuta en procesadores de aarch64",
 		"Este script sólo se ejecuta en Raspberry Pi 4",
-		"DNF no está disponible, ¿este sistema no es Oracle Linux?, instala Oracle Linux 8",
+		"APT no está disponible, ¿Acaso esto no es Debian?",
+		"Este distro de Debian no tiene la aplicación raspi-config, por favor use Raspberry Pi OS Lite, saliendo",
+		"Bien, este es Raspberry Pi OS, pero no es Raspberry Pi OS Lite, saliendo",
 		"No tienes conexión a internet, por favor revisa e inténtalo de nuevo",
-		"Actualizando repositorios de Oracle Linux... Por favor, espere",
-		"dialog no está disponible, instalando",
+		"Actualizando repositorios de Debian...",
+		"lsb_release no está disponible, instalando",
+		"Tu sistema operativo no es Debian, saliendo",
+		"dialog is no está disponible, instalando",
 		"Todo ok!",
-		"=============== PAQUETES BASE =============== \n",
-		"=============== SERVICIO DE COCKPIT (IP:9090) =============== \n",
+		"=============== ACTUALIZACIÓN DEL SISTEMA =============== \n",
+		"=============== CONTRASEÑA DE ROOT PARA EL SISTEMA =============== \n",
+		"=============== CAMBIO A LOS REPOSITORIOS DE SID Y ACTUALIZACIÓN DE DIST =============== \n",
+		"=============== INSTALACIÓN DE PAQUETES BASE =============== \n",
 		"=============== AGREGAR UN USUARIO DE SUDO =============== \n",
 		"Hemos creado un script llamado omz.sh en tu carpeta de home, después de reiniciar, usa chmod +x omz.sh",
-		"Por favor reiniciar tu servidor para hacer los cambios",
+		"LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, repórtalo a 036raspberry",
         "Tu versión de Python es menor que 3.5, saliendo",
         "Tú no eres superusuario, por favor ejecuta como root"
 	)
@@ -77,30 +87,20 @@ def reader(position: int) -> str:
     
     DICTIONARY_ENG=(
         "Press Enter to continue...",
-		"Please write your hostname (ex: A036-oracle)",
-		"America/Guayaquil is the timezone by default, if you want to change, here is the command\n\n timedatectl set-timezone REGION/CITY",
-		"Choose your keyboard layout and locale",
+		"The raspi-config app will be open, please change your configurations",
 		"Write your new user: ",
-		"Graphical",
-		"Install XFCE as Desktop Environment?",
-		"Install Oracle Linux KVM Suite?",
 		"More Sofware!!",
 		"This script has a little pack of software, Do you like it?\n",
 		"READY!!!, Your RPI4 is succesfully configured, if you have errors, please report at 036raspberry in GitHub"
 	)
 
     DICTIONARY_ESP=(
-		"Presione Enter para continuar...",
-		"Por favor escriba su hostname (ex: A036-oracle)",
-		"America/Guayaquil es el timezone por defecto, si quieres cambiarlo por algun otro, aqui esta la orden\n\n timedatectl set-timezone REGION/CITY",
-		"Elige tu distribución de teclado y tu locale",
-		"Escribe tu nuevo usuario: ",
-		"Entorno Grafico",
-		"¿Instalar XFCE como Entorno grafico?",
-		"¿Instalar el Suite de Oracle KVM?",
-		"Mas Sofware!!",
-		"Este script tiene un pequeño pack de software, ¿Te gusta?",
-		"LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, repórtalo a 036raspberry",
+        "Presione Enter para continuar...",
+		"La aplicación de raspi-config se va a abrir, por favor cambia las configuraciones pertinentes",
+        "Escribe tu nuevo usuario: ",
+		"Más Sofware!!",
+		"Este script tiene un pequeño pack de software, ¿Te gusta?\n",
+		"LISTO!!!, Tu RPI4 fue configurado exitosamente, si tienes errores, reportalo a 036raspberry"
 	)
 
     if LANGUAGE == 1: return DICTIONARY_ENG[position]
@@ -171,154 +171,113 @@ def cover() -> None:
 
 def verify() -> None:
     
-    ORACLE: str = Popen(r"""cat /etc/os-release | head -n 1 | cut -d "=" -f2
-                        """, shell=True, stdout=PIPE).stdout.read().decode('utf-8').replace("\n", "")
-    
     PI: str = Popen(r"""cat /sys/firmware/devicetree/base/model
                     """, shell=True, stdout=PIPE).stdout.read().decode('utf-8').replace("\n", "")
     
     if version_info < (3, 5):
-        utils.clear(); printer("error",14); exit(1)
+        utils.clear(); printer("error",19); exit(1)
     if platform != "linux":
         utils.clear(); printer("error",0); exit(1)
     if getuid() != 0:
-        utils.clear(); printer("error",15); exit(1)
-    if not search("\"Oracle.* ",ORACLE):
-        utils.clear(); printer("error",1); exit(1)
+        utils.clear(); printer("error",20); exit(1)
     if machine() != "aarch64":
-        utils.clear(); printer("error",2); exit(1)
+        utils.clear(); printer("error",1); exit(1)
     if not search("^Raspberry\sPi\s4.*",PI):
+        utils.clear(); printer("error",2); exit(1)
+    if not commandverify("apt"):
         utils.clear(); printer("error",3); exit(1)
-    if not commandverify("dnf"):
+    if not commandverify("raspi-config"):
         utils.clear(); printer("error",4); exit(1)
+    if commandverify("openbox-lxde-session"):
+        utils.clear(); printer("error",5); exit(1)
     try: urlopen('http://google.com')
-    except: utils.clear(); printer("error",5); exit(1)
-    
-    printer("print",6)      
-    system("dnf update --assumeyes &> /dev/null")
-    
-    if not commandverify("dialog"):
-        printer("print",7)
-        system("dnf install dialog --assumeyes &> /dev/null")
+    except: utils.clear(); printer("error",6); exit(1)
+
+    if not commandverify("lsb_release"):
+        printer("print",8)
+        system("apt install -y lsb-release &> /dev/null")
         
-    printer("print",8)     
+    LSB: str = Popen("lsb_release -is", 
+                shell=True, stdout=PIPE).stdout.read().decode('utf-8').replace("\n", "")
+        
+    if LSB != "Debian":
+        utils.clear(); printer("error",9); exit(1)
+            
+    if not commandverify("dialog"):
+        printer("print",10)
+        system("apt install -y dialog &> /dev/null")
+        
+    printer("print",11)     
     
     spinner = utils.spinning()
     for _ in range(15):
         stdout.write(next(spinner))
         stdout.flush(); sleep(0.1)  
         stdout.write('\b')
-    
+
 def packages() -> None:
     
-    utils.clear(); printer("print",8)
-    system("dnf install rsync sudo nano git net-tools wget nano e2fsprogs \
-		cockpit glibc-all-langpacks glibc-langpack-es zsh -y")
-    print("=============== OK =============== \n")
-    input(reader(0))
-    
-def hostnamer() -> None:
-    
-    response = d.inputbox(reader(1), 8, 80)
-    if response[0] == "ok":
-        system("hostnamectl set-hostname " + response[1])
-    elif response[0] == "cancel": exit(0) 
-    
-def localer() -> None:
-    
-    choices = [("Spanish/Español","es"),("English","us")]
-    d.msgbox(reader(2),9,50)
-    system("timedatectl set-timezone America/Guayaquil")
-    response = d.menu(reader(0), 15, 50, 4, choices)
-    if response[0] == "ok" and response[1] == "Spanish/Español":
-        system("localectl set-keymap es")
-        system("localectl set-locale LANG=es_ES.UTF-8")
-    elif response[0] == "ok" and response[1] == "English":
-        system("localectl set-keymap us")
-        system("localectl set-locale LANG=en_US.UTF-8")
-    else: utils.clear(); exit(0)
-    
-def cockpit() -> None:
-    
-    utils.clear(); printer("print",10)
-    system("systemctl enable --now cockpit.socket")
-    system("systemctl start cockpit.socket")
+    utils.clear()
+    system(r"sed -i 's/^#PermitRootLogin\s.*$/PermitRootLogin yes/' /etc/ssh/sshd_config &> /dev/null")
+    printer("print",12)
+    system("apt upgrade -y")
     print(" ")
     print("=============== OK =============== \n")
     input(reader(0))
+    utils.clear(); printer("print",13)
+    system("passwd")
+    print(" ")
+    print("=============== OK =============== \n")
+    input(reader(0))
+    utils.clear(); printer("print",15)
+    system("apt install -y cockpit git net-tools wget vim rsync neofetch \
+		screen unrar p7zip vim network-manager-gnome zsh python3-pip libgles1 libopengl0 libxvmc1 libgpiod-dev python3-libgpiod")
+    system("systemctl enable NetworkManager.service")
+    with open('/etc/NetworkManager/NetworkManager.conf', 'a') as f:
+        f.write("\nSet managed=true")
+    system("systemctl disable dhcpcd.service")
+    print(" ")
+    print("=============== OK =============== \n")
+    input(reader(0))
+    d.msgbox(reader(1),7,50); system("raspi-config")
     
 def newuser() -> None:
     
     global SUDOUSER
-    utils.clear(); printer("print",11)
-    SUDOUSER = input(reader(4))
+
+    utils.clear(); printer("print",16)
+    SUDOUSER = input(reader(2))
     system(f"adduser {SUDOUSER}")
-    system(f"passwd {SUDOUSER}")
-    system(f"usermod -aG wheel {SUDOUSER}")
+    system(f"usermod -aG sudo {SUDOUSER}")
     print(" ")
     print("=============== OK =============== \n")
     input(reader(0))
 
 def graphical() -> None:
     
-    global XRDPTOGGLE
-    
-    if d.yesno(reader(6),7,60) == d.OK:
-        XRDPTOGGLE=1; utils.clear()
-        print("=============== EPEL & XFCE =============== \n")
-        system("dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm --assumeyes")
-        system("dnf update --assumeyes")
-        system('dnf groupinstall "base-x" --assumeyes')
-        system('dnf groupinstall "xfce" --assumeyes')
-        system("dnf install xfce4-whiskermenu-plugin --assumeyes")
-        system("touch /root/.xinitrc")
-        with open(f"/root/.xinitrc", 'w') as f: f.write('xfce4-session')
-        system(f"touch /home/{SUDOUSER}/.xinitrc")
-        with open(f"/home/{SUDOUSER}/.xinitrc", 'w') as f: f.write('xfce4-session')
-        print(" ")
-        print("=============== OK =============== \n")
-        input(reader(0))
-    else:
-        utils.clear()
-        print("=============== EPEL =============== \n")
-        system("dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm --assumeyes")
-        print(" ")
-        print("=============== OK =============== \n")
-        input(reader(0))
-
-def remote() -> None:
-    
-    global XRDPTOGGLE
-
     utils.clear()
-    if XRDPTOGGLE == 1:
-        print("=============== XRDP ===============  \n")
-        system('dnf install xrdp --assumeyes')
-        system(f"touch /home/{SUDOUSER}/.Xclients")
-        with open(f'/home/{SUDOUSER}/.Xclients', 'w') as f: f.write('xfce4-session')
-        system(f'chmod a+x /home/{SUDOUSER}/.Xclients')
-        system(f'chown {SUDOUSER} /home/{SUDOUSER}/.Xclients')
-        system('systemctl enable xrdp')
-        system('systemctl enable xrdp-sesman')
-        system('chcon --type=bin_t /usr/sbin/xrdp')
-        system('chcon --type=bin_t /usr/sbin/xrdp-sesman')
-        print(" ")
-        print("=============== OK =============== \n")
-        input(reader(0))
-
-def kvm() -> None:
+    print("=============== XFCE =============== \n")
+    system("apt install -y xserver-xorg xfce4 xfce4-goodies xfce4-indicator-plugin \
+		blueman ttf-ubuntu-font-family nemo cinnamon-l10n gdm3")
+    system("touch /root/.xinitrc")
+    with open('/root/.xinitrc', 'w') as f:
+        f.writelines([
+            "export XAUTHORITY=${HOME}/.Xauthority\n",
+            "xfce4-session"
+        ])  
     
-    utils.clear()
-    if d.yesno(reader(7),8,60) == d.OK:
-        utils.clear()
-        print("=============== KVM ===============  \n" )
-        system('dnf module install virt -y')
-        system('dnf install virt-install virt-viewer virt-manager cockpit-machines -y')
-        system('virt-host-validate qemu')
-        system('systemctl enable libvirtd')
-        system('systemctl start libvirtd')
-    else: utils.clear(); return
-
+    system(f"touch /home/{SUDOUSER}/.xinitrc")
+    with open(f"/home/{SUDOUSER}/.xinitrc", 'w') as f:
+        f.writelines([
+            "export XAUTHORITY=${HOME}/.Xauthority\n",
+            "xfce4-session"
+        ])
+        
+    system(f"chown {SUDOUSER} /home/{SUDOUSER}/.xinitrc")
+    print(" ")
+    print("=============== OK =============== \n")
+    input(reader(0))
+    
 def ohmyzsh() -> None:
     
     utils.clear()
@@ -353,25 +312,35 @@ def ohmyzsh() -> None:
         ])
     
     system(f'chmod +x /root/omz.sh')
-    printer("print",12)
+    printer("print",17)
     print(" ")
     print("=============== OK =============== \n")
     input(reader(0))
-
+    
 def software() -> None:
     
-    utils.clear()
-    if d.yesno(reader(10)+"""\n -> baobab \n -> ntfs-3g \n -> nautilus \n -> gedit \n -> tar \n -> yum-utils \n -> numix-gtk-theme \n -> numix-icon-theme \n -> numix-icon-theme-circle
+    system("systemctl mask lvm2-monitor")
+    
+    with open('/boot/config.txt', 'a') as f: 
+        f.writelines([
+            "\ndisable_overscan=1\n",
+            'hdmi_drive=2',
+        ])  
+        
+    if d.yesno(reader(4)+"""\n -> Pi-Apps \n -> baobab \n -> ntfs-3g \n -> exfat-utils \n -> xrdp \n -> xarchiver \n -> synaptic \n -> neofetch \n -> vlc \n -> gdebi \n -> numix-gtk-theme-git \n -> numix-icon-theme
             """ ,20,65) == d.OK:
         utils.clear()
         print("=============== SOFTWARE =============== \n")
-        system('dnf install baobab ntfs-3g exfatprogs nautilus gedit tar yum-utils --assumeyes')
-        system('dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm --assumeyes')
-        system('dnf install numix-gtk-theme --assumeyes')
-        system('dnf install http://mirror.centos.org/centos/7/os/x86_64/Packages/gnome-icon-theme-3.12.0-1.el7.noarch.rpm --assumeyes')
-        system('dnf install numix-icon-theme --assumeyes')
-        system('dnf install numix-icon-theme-circle --assumeyes')
-        system('dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm --assumeyes')
+    
+        system("apt install -y xrdp gdebi synaptic aptitude neofetch vlc libwnck-common libwnck22 \
+		baobab ntfs-3g exfat-fuse exfat-utils xarchiver numix-gtk-theme numix-icon-theme-circle")
+        
+        system(f"sudo -u {SUDOUSER} bash -c 'wget -qO- https://raw.githubusercontent.com/Botspot/pi-apps/master/install | bash'")
+    
+        system("adduser xrdp ssl-cert")
+        system("systemctl enable xrdp")
+        system("systemctl enable xrdp-sesman")
+    
         print(" ")
         print("=============== OK =============== \n")
         input(reader(0))
@@ -380,8 +349,8 @@ def software() -> None:
 
 def finisher() -> None:
     
-    utils.clear(); d.msgbox(reader(10),7,50)
-    utils.clear(); printer("print", 13); exit(0)
+    utils.clear(); d.msgbox(reader(5),7,50)
+    utils.clear(); printer("print", 18); exit(0)
 
 class utils:
     
